@@ -1584,7 +1584,7 @@ div[id^="quizArea"] .quiz-option{
         // ===== Google試算表後台同步 =====
         const LEARNING_BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxqrJM3w3Uuj2vFzdZV2OHG2GLTyi0chXemuKHaen7ptUNUtHidZvo0Zdz_57O09602/exec';
         const LEARNING_BACKEND_KEY = 'CIRCLE_ANGLE_2026_V1';
-        const LEARNING_APP_VERSION = '2026.08.04-split-entry1';
+        const LEARNING_APP_VERSION = '2026.08.04-split-entry2';
         let syncInProgress = false;
         let syncTimer = null;
 
@@ -1613,7 +1613,7 @@ div[id^="quizArea"] .quiz-option{
         let pretestSyncInProgress = false;
 
         function getPretestCompletionKey() {
-            return `circleAnglePretestCompleted:${studentInfo.anonymousId || 'unknown'}`;
+            return `circleAnglePretestCompleted:v2:${studentInfo.anonymousId || 'unknown'}`;
         }
 
         function getPretestQueueKey() {
