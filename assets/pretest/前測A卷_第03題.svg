@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
+  <title>第3題：辨識圓周角</title>
+  <rect width="1200" height="675" fill="#f8fafc"/>
+  <style>
+    text{font-family:"Microsoft JhengHei","Noto Sans TC",sans-serif;fill:#172033}
+    .label{font-size:34px;font-weight:700}.small{font-size:26px;font-weight:600}.panel{font-size:30px;font-weight:700}
+  </style>
+  <g><circle cx="165" cy="330" r="105" fill="#ffffff" stroke="#172033" stroke-width="7"/><line x1="165" y1="330" x2="74.06733260263395" y2="277.5" stroke="#2563eb" stroke-width="6" stroke-linecap="round"/><line x1="165" y1="330" x2="251.01096465034414" y2="269.7744741831401" stroke="#2563eb" stroke-width="6" stroke-linecap="round"/><path d="M 139.01923788646684 315 A 30 30 0 0 1 189.57456132866974 312.7927069094686" fill="none" stroke="#2563eb" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="165" cy="330" r="13" fill="#334155"/><text class="label" x="177" y="318" fill="#334155">O</text><circle cx="165" cy="330" r="10" fill="#16a34a"/>
+    <text class="panel" x="165" y="540" text-anchor="middle">圖A</text></g><g><circle cx="455" cy="330" r="105" fill="#ffffff" stroke="#172033" stroke-width="7"/><line x1="445.84864701149587" y1="434.6004432996333" x2="364.06733260263394" y2="277.5" stroke="#2563eb" stroke-width="6" stroke-linecap="round"/><line x1="445.84864701149587" y1="434.6004432996333" x2="545.932667397366" y2="277.49999999999994" stroke="#2563eb" stroke-width="6" stroke-linecap="round"/><path d="M 431.99618861444486 407.9901183042866 A 30 30 0 0 1 461.96763526190057 409.2986999252467" fill="none" stroke="#2563eb" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="455" cy="330" r="13" fill="#334155"/><text class="label" x="467" y="318" fill="#334155">O</text><circle cx="445.84864701149587" cy="434.6004432996333" r="10" fill="#16a34a"/>
+    <text class="panel" x="455" y="540" text-anchor="middle">圖B</text></g><g><circle cx="745" cy="330" r="105" fill="#ffffff" stroke="#172033" stroke-width="7"/><line x1="773" y1="308" x2="649.8376823611518" y2="285.6250825172266" stroke="#2563eb" stroke-width="6" stroke-linecap="round"/><line x1="773" y1="308" x2="835.932667397366" y2="277.49999999999994" stroke="#2563eb" stroke-width="6" stroke-linecap="round"/><path d="M 743.4831340115886 302.6376663455019 A 30 30 0 0 1 799.9965798004969 294.9162436939767" fill="none" stroke="#2563eb" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="745" cy="330" r="13" fill="#334155"/><text class="label" x="757" y="318" fill="#334155">O</text><circle cx="773" cy="308" r="10" fill="#16a34a"/>
+    <text class="panel" x="745" y="540" text-anchor="middle">圖C</text></g><g><circle cx="1035" cy="330" r="105" fill="#ffffff" stroke="#172033" stroke-width="7"/><line x1="1025.8486470114958" y1="434.6004432996333" x2="1035" y2="330" stroke="#2563eb" stroke-width="6" stroke-linecap="round"/><line x1="1025.8486470114958" y1="434.6004432996333" x2="1125.932667397366" y2="277.49999999999994" stroke="#2563eb" stroke-width="6" stroke-linecap="round"/><path d="M 1028.4633192939257 404.71460235688096 A 30 30 0 0 1 1041.9676352619006 409.29869992524675" fill="none" stroke="#2563eb" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="1035" cy="330" r="13" fill="#334155"/><text class="label" x="1047" y="318" fill="#334155">O</text><circle cx="1025.8486470114958" cy="434.6004432996333" r="10" fill="#16a34a"/>
+    <text class="panel" x="1035" y="540" text-anchor="middle">圖D</text></g>
+    <text class="small" x="600" y="625" text-anchor="middle">判斷頂點的位置，以及角的兩邊是否都是弦</text>
+  </svg>

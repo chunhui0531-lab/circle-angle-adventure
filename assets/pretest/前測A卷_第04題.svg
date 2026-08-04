@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
+  <title>第4題：找出弧BC所對的圓周角</title>
+  <rect width="1200" height="675" fill="#f8fafc"/>
+  <style>
+    text{font-family:"Microsoft JhengHei","Noto Sans TC",sans-serif;fill:#172033}
+    .label{font-size:34px;font-weight:700}.small{font-size:26px;font-weight:600}.panel{font-size:30px;font-weight:700}
+  </style>
+  <circle cx="600" cy="340" r="230" fill="#ffffff" stroke="#172033" stroke-width="7"/><path d="M 423.80977808263503 192.15884977209598 A 230 230 0 0 1 776.1902219173649 192.1588497720959" fill="none" stroke="#f97316" stroke-width="18" stroke-linecap="round"/>
+    <line x1="411.59502981353194" y1="471.92258036074065" x2="423.80977808263503" y2="192.15884977209598" stroke="#172033" stroke-width="7" stroke-linecap="round"/><line x1="411.59502981353194" y1="471.92258036074065" x2="776.1902219173649" y2="192.1588497720959" stroke="#172033" stroke-width="7" stroke-linecap="round"/><line x1="762.6345596729059" y1="502.6345596729059" x2="423.80977808263503" y2="192.15884977209598" stroke="#172033" stroke-width="7" stroke-linecap="round"/><line x1="762.6345596729059" y1="502.6345596729059" x2="776.1902219173649" y2="192.1588497720959" stroke="#172033" stroke-width="7" stroke-linecap="round"/>
+    <path d="M 413.6015216323374 425.9663621679752 A 46 46 0 0 1 448.08928346692875 443.9195546263395" fill="none" stroke="#16a34a" stroke-width="10" stroke-linecap="round"/><path d="M 728.7198021796402 471.5574101225855 A 46 46 0 0 1 764.6410514917113 456.67834148014043" fill="none" stroke="#16a34a" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="411.59502981353194" cy="471.92258036074065" r="13" fill="#2563eb"/><text class="label" x="363.59502981353194" y="457.92258036074065" fill="#2563eb">A</text><circle cx="423.80977808263503" cy="192.15884977209598" r="13" fill="#ef4444"/><text class="label" x="371.80977808263503" y="208.15884977209598" fill="#ef4444">B</text><circle cx="776.1902219173649" cy="192.1588497720959" r="13" fill="#ef4444"/><text class="label" x="794.1902219173649" y="208.1588497720959" fill="#ef4444">C</text><circle cx="762.6345596729059" cy="502.6345596729059" r="13" fill="#2563eb"/><text class="label" x="780.6345596729059" y="490.6345596729059" fill="#2563eb">D</text>
+    <text class="small" x="600" y="625" text-anchor="middle">找出兩邊都通過 B、C 的圓周角</text>
+  </svg>

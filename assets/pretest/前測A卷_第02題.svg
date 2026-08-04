@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
+  <title>第2題：由圓心角判斷弧的度數</title>
+  <rect width="1200" height="675" fill="#f8fafc"/>
+  <style>
+    text{font-family:"Microsoft JhengHei","Noto Sans TC",sans-serif;fill:#172033}
+    .label{font-size:34px;font-weight:700}.small{font-size:26px;font-weight:600}.panel{font-size:30px;font-weight:700}
+  </style>
+  <circle cx="600" cy="350" r="230" fill="#ffffff" stroke="#172033" stroke-width="7"/><path d="M 400.81415712957914 234.99999999999997 A 230 230 0 0 1 799.1858428704209 234.9999999999999" fill="none" stroke="#f97316" stroke-width="18" stroke-linecap="round"/><line x1="600" y1="350" x2="400.81415712957914" y2="234.99999999999997" stroke="#2563eb" stroke-width="7" stroke-linecap="round"/><line x1="600" y1="350" x2="799.1858428704209" y2="234.9999999999999" stroke="#2563eb" stroke-width="7" stroke-linecap="round"/><path d="M 537.6461709275204 314 A 72 72 0 0 1 662.3538290724796 314" fill="none" stroke="#2563eb" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="400.81415712957914" cy="234.99999999999997" r="13" fill="#2563eb"/><text class="label" x="345.81415712957914" y="242.99999999999997" fill="#2563eb">A</text><circle cx="799.1858428704209" cy="234.9999999999999" r="13" fill="#ef4444"/><text class="label" x="817.1858428704209" y="242.9999999999999" fill="#ef4444">B</text><circle cx="600" cy="350" r="13" fill="#334155"/><text class="label" x="618" y="332" fill="#334155">O</text>
+    <text class="label" x="600" y="305" text-anchor="middle" fill="#2563eb">120°</text>
+    <text class="small" x="600" y="625" text-anchor="middle">∠AOB 與橘色弧 AB 對應相同的端點</text>
+  </svg>

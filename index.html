@@ -828,6 +828,82 @@ div[id^="quizArea"] .quiz-option{
   }
 }
 
+/* 網站內前測：獨立版面，不影響既有關卡配置 */
+#pretestPage {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 24px 18px 48px;
+}
+.pretest-header {
+  background: linear-gradient(135deg, #4c6ef5, #7048e8);
+  color: #fff;
+  border-radius: 18px;
+  padding: 26px 30px;
+  margin-bottom: 20px;
+  box-shadow: 0 6px 20px rgba(76, 110, 245, .22);
+}
+.pretest-header h2 { margin: 0 0 10px; font-size: 2rem; }
+.pretest-header p { margin: 0; font-size: 1.05rem; line-height: 1.7; }
+.pretest-progress {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: #fff;
+  border: 2px solid #bac8ff;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 18px;
+  color: #364fc7;
+  font-weight: 700;
+}
+.pretest-card {
+  background: #fff;
+  border: 2px solid #dee2e6;
+  border-radius: 16px;
+  padding: 22px;
+  margin-bottom: 20px;
+}
+.pretest-card legend, .pretest-question {
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.75;
+  color: #212529;
+  margin-bottom: 14px;
+}
+.pretest-image {
+  display: block;
+  width: min(100%, 720px);
+  max-height: 430px;
+  object-fit: contain;
+  margin: 6px auto 18px;
+  border: 1px solid #e9ecef;
+  border-radius: 10px;
+  background: #f8f9fa;
+}
+.pretest-options { display: grid; gap: 10px; }
+.pretest-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 13px 15px;
+  border: 2px solid #e9ecef;
+  border-radius: 10px;
+  cursor: pointer;
+  line-height: 1.55;
+}
+.pretest-option:has(input:checked) { border-color: #4c6ef5; background: #edf2ff; }
+.pretest-option input { width: 20px; height: 20px; margin-top: 2px; flex: 0 0 auto; }
+.pretest-rating { grid-template-columns: repeat(5, minmax(58px, 1fr)); }
+.pretest-rating .pretest-option { justify-content: center; align-items: center; padding: 12px 6px; }
+.pretest-actions { text-align: center; margin-top: 26px; }
+#pretestStatus { min-height: 28px; margin: 12px 0; font-weight: 700; color: #495057; }
+@media (max-width: 620px) {
+  #pretestPage { padding: 14px 10px 36px; }
+  .pretest-header, .pretest-card { padding: 18px 15px; }
+  .pretest-header h2 { font-size: 1.55rem; }
+  .pretest-rating { grid-template-columns: repeat(5, 1fr); }
+}
+
 </style>
 </head>
 <body>
@@ -874,6 +950,21 @@ div[id^="quizArea"] .quiz-option{
                     </button>
 </div>
 </div>
+</div>
+<!-- 網站內前測 -->
+<div class="main-content hidden" id="pretestPage">
+  <div class="pretest-header">
+    <h2>📝 「角」醒時刻：前測 A 卷</h2>
+    <p>請依照圖形與目前的想法作答。這是課前診斷，不會顯示分數，也不影響成績；不確定時可以選「我不確定」。</p>
+  </div>
+  <div class="pretest-progress" id="pretestProgress" aria-live="polite">已完成 0／13 題</div>
+  <form id="pretestForm" onsubmit="submitPretest(event)" novalidate>
+    <div id="pretestQuestions"></div>
+    <div class="pretest-actions">
+      <div id="pretestStatus" aria-live="polite"></div>
+      <button class="btn btn-primary" id="pretestSubmitButton" type="submit" style="font-size:1.2em; padding:15px 46px;">送出前測，進入探索</button>
+    </div>
+  </form>
 </div>
 <!-- 故事情境頁面 -->
 <div class="main-content hidden" id="storyPage">
@@ -1461,7 +1552,7 @@ div[id^="quizArea"] .quiz-option{
         // ===== Google試算表後台同步 =====
         const LEARNING_BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxqrJM3w3Uuj2vFzdZV2OHG2GLTyi0chXemuKHaen7ptUNUtHidZvo0Zdz_57O09602/exec';
         const LEARNING_BACKEND_KEY = 'CIRCLE_ANGLE_2026_V1';
-        const LEARNING_APP_VERSION = '2026.08.04-sync1';
+        const LEARNING_APP_VERSION = '2026.08.04-pretest1';
         let syncInProgress = false;
         let syncTimer = null;
 
@@ -1470,6 +1561,148 @@ div[id^="quizArea"] .quiz-option{
                 return `${prefix}-${window.crypto.randomUUID()}`;
             }
             return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}-${Math.random().toString(16).slice(2)}`;
+        }
+
+        const WEBSITE_PRETEST_ITEMS = [
+            { id: 'PRE-A-Q01', number: 1, text: '圖中橘色的曲線位於圓周上 A、B 兩點之間。這個部分稱為什麼？', image: 'assets/pretest/前測A卷_第01題.svg', options: ['弧 AB', '弦 AB', '半徑 OA', '圓心角 ∠AOB', '我不確定'] },
+            { id: 'PRE-A-Q02', number: 2, text: '圖中 ∠AOB＝120°，橘色弧 AB 是 ∠AOB 所對的弧。你認為弧 AB 的度數是多少？', image: 'assets/pretest/前測A卷_第02題.svg', options: ['60°', '120°', '240°', '無法判斷', '我不確定'] },
+            { id: 'PRE-A-Q03', number: 3, text: '課本將「頂點在圓上，而且角的兩邊都是弦」的角稱為圓周角。哪一個圖中的藍色角符合這兩個條件？', image: 'assets/pretest/前測A卷_第03題.svg', options: ['圖 A', '圖 B', '圖 C', '圖 D', '我不確定'] },
+            { id: 'PRE-A-Q04', number: 4, text: '圖中 A、B、C、D 都在圓上。哪些角的兩邊都通過 B、C，因此是橘色弧 BC 所對的圓周角？', image: 'assets/pretest/前測A卷_第04題.svg', options: ['∠BAC 與 ∠BDC', '∠ABC 與 ∠BCD', '∠BAD 與 ∠BCD', '∠ADB 與 ∠ACD', '我不確定'] },
+            { id: 'PRE-A-Q05', number: 5, text: '圖中 ∠AOB 與 ∠ACB 都對著橘色弧 AB。已知 ∠AOB＝100°，你認為 ∠ACB 最可能是多少度？', image: 'assets/pretest/前測A卷_第05題.svg', options: ['25°', '50°', '100°', '200°', '我不確定'] },
+            { id: 'PRE-A-Q06', number: 6, text: '圖中的 ∠ACB 與 ∠ADB 都是橘色弧 AB 所對的圓周角。已知 ∠ACB＝40°，你認為 ∠ADB 最可能是多少度？', image: 'assets/pretest/前測A卷_第06題.svg', options: ['20°', '40°', '80°', '無法判斷', '我不確定'] },
+            { id: 'PRE-A-Q07', number: 7, text: '橘色弧 AB 的長是圓周長的 1/4，∠ACB 與 ∠ADB 都是弧 AB 所對的圓周角。你認為這兩個角最可能各是多少度？', image: 'assets/pretest/前測A卷_第07題.svg', options: ['22.5°', '45°', '90°', '180°', '我不確定'] },
+            { id: 'PRE-A-Q08', number: 8, text: '圖中 ∠ACB 是橘色弧 AB 所對的圓周角。已知 ∠ACB＝45°，你認為弧 AB 的度數最可能是多少？', image: 'assets/pretest/前測A卷_第08題.svg', options: ['22.5°', '45°', '90°', '180°', '我不確定'] },
+            { id: 'PRE-A-Q09', number: 9, text: 'AB 通過圓心 O，是一條直徑。你認為圖中的 ∠ACB 最可能是多少度？', image: 'assets/pretest/前測A卷_第09題.svg', options: ['45°', '60°', '90°', '180°', '我不確定'] },
+            { id: 'PRE-A-Q10', number: 10, text: '三個圖的 A、B 固定，只把點 C 沿著同一段圓周移動。三個 ∠ACB 都對著同一段橘色弧 AB。你認為它們的大小關係最可能是什麼？', image: 'assets/pretest/前測A卷_第10題.svg', options: ['三個角一樣大', '點 C 越靠近 A，角越大', '點 C 越靠近 B，角越大', '每個位置都沒有規律', '我不確定'] },
+            { id: 'PRE-A-S11', number: 11, selfRating: true, text: '看著圓形圖案時，我能分辨弧、半徑、直徑等部分。' },
+            { id: 'PRE-A-S12', number: 12, selfRating: true, text: '看著圖形時，我能指出題目正在比較哪一段弧或哪一個角。' },
+            { id: 'PRE-A-S13', number: 13, selfRating: true, text: '遇到沒有學過的圓形問題時，我願意操作圖形、觀察變化並提出猜想。' }
+        ];
+        let pretestSyncInProgress = false;
+
+        function getPretestCompletionKey() {
+            return `circleAnglePretestCompleted:${studentInfo.anonymousId || 'unknown'}`;
+        }
+
+        function getPretestQueueKey() {
+            return `circleAnglePretestQueue:${studentInfo.anonymousId || 'unknown'}`;
+        }
+
+        function readPretestQueue() {
+            try {
+                const value = JSON.parse(localStorage.getItem(getPretestQueueKey()) || '[]');
+                return Array.isArray(value) ? value : [];
+            } catch (error) {
+                console.warn('無法讀取前測待傳資料。', error);
+                return [];
+            }
+        }
+
+        function writePretestQueue(queue) {
+            localStorage.setItem(getPretestQueueKey(), JSON.stringify(queue));
+        }
+
+        function hasCompletedPretest() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(getPretestCompletionKey()) || 'null');
+                return Boolean(saved && saved.submissionId && saved.completedAt);
+            } catch (error) {
+                return false;
+            }
+        }
+
+        function renderPretest() {
+            const container = document.getElementById('pretestQuestions');
+            container.innerHTML = WEBSITE_PRETEST_ITEMS.map(item => {
+                const options = item.selfRating ? [1, 2, 3, 4, 5] : item.options.map((_, index) => index);
+                const optionHtml = options.map(value => {
+                    const label = item.selfRating ? `${value}` : item.options[value];
+                    return `<label class="pretest-option"><input type="radio" name="pretest-${item.id}" value="${value}" data-answer="${encodeURIComponent(label)}" onchange="updatePretestProgress()"><span>${label}</span></label>`;
+                }).join('');
+                const ratingHelp = item.selfRating ? '<div style="display:flex;justify-content:space-between;color:#6c757d;margin:0 4px 10px;"><span>1 不符合</span><span>5 很符合</span></div>' : '';
+                return `<fieldset class="pretest-card" id="card-${item.id}"><legend>第 ${item.number} 題${item.selfRating ? '｜學習自評' : ''}</legend><div class="pretest-question">${item.text}</div>${item.image ? `<img class="pretest-image" src="${item.image}" alt="第 ${item.number} 題圖形">` : ''}${ratingHelp}<div class="pretest-options${item.selfRating ? ' pretest-rating' : ''}">${optionHtml}</div></fieldset>`;
+            }).join('');
+            updatePretestProgress();
+        }
+
+        function updatePretestProgress() {
+            const completed = WEBSITE_PRETEST_ITEMS.filter(item => document.querySelector(`input[name="pretest-${item.id}"]:checked`)).length;
+            document.getElementById('pretestProgress').textContent = `已完成 ${completed}／${WEBSITE_PRETEST_ITEMS.length} 題`;
+        }
+
+        function showPretest() {
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('storyPage').classList.add('hidden');
+            document.getElementById('pretestPage').classList.remove('hidden');
+            renderPretest();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function submitPretest(event) {
+            event.preventDefault();
+            const missing = WEBSITE_PRETEST_ITEMS.find(item => !document.querySelector(`input[name="pretest-${item.id}"]:checked`));
+            if (missing) {
+                document.getElementById('pretestStatus').textContent = `請先完成第 ${missing.number} 題。`;
+                document.getElementById(`card-${missing.id}`).scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+
+            const button = document.getElementById('pretestSubmitButton');
+            button.disabled = true;
+            document.getElementById('pretestStatus').textContent = '正在保存前測紀錄…';
+            const submission = {
+                submissionId: createRecordId('pretest'),
+                anonymousId: studentInfo.anonymousId,
+                classCode: studentInfo.class,
+                seatNumber: Number(studentInfo.number),
+                activityCode: 'PRE_A',
+                clientSubmittedAt: new Date().toISOString(),
+                answers: WEBSITE_PRETEST_ITEMS.map(item => {
+                    const input = document.querySelector(`input[name="pretest-${item.id}"]:checked`);
+                    return {
+                        questionId: item.id,
+                        selectedIndex: Number(input.value),
+                        selectedAnswer: decodeURIComponent(input.dataset.answer || '')
+                    };
+                })
+            };
+
+            writePretestQueue([...readPretestQueue(), submission]);
+            localStorage.setItem(getPretestCompletionKey(), JSON.stringify({
+                submissionId: submission.submissionId,
+                completedAt: submission.clientSubmittedAt
+            }));
+            const synced = await flushPretestQueue();
+            document.getElementById('pretestStatus').textContent = synced
+                ? '前測已同步，準備進入探索。'
+                : '前測已保存在平板，恢復網路後會自動補傳。';
+            setTimeout(beginLessonAfterPretest, 500);
+        }
+
+        async function flushPretestQueue() {
+            if (pretestSyncInProgress || !navigator.onLine) return false;
+            const queue = readPretestQueue();
+            if (!queue.length) return true;
+            pretestSyncInProgress = true;
+            try {
+                const submission = queue[0];
+                const response = await fetch(LEARNING_BACKEND_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'SYNC_PRETEST', deploymentKey: LEARNING_BACKEND_KEY, submission })
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const result = await response.json();
+                if (!result.ok) throw new Error(result.message || '前測後台拒絕接收。');
+                writePretestQueue(readPretestQueue().filter(item => item.submissionId !== submission.submissionId));
+                if (readPretestQueue().length) setTimeout(() => flushPretestQueue(), 100);
+                return true;
+            } catch (error) {
+                console.warn('前測同步失敗，資料保留等待補傳。', error);
+                return false;
+            } finally {
+                pretestSyncInProgress = false;
+            }
         }
 
         function getSyncQueueKey() {
@@ -1629,7 +1862,10 @@ div[id^="quizArea"] .quiz-option{
             });
         }
 
-        window.addEventListener('online', () => flushLearningEventQueue());
+        window.addEventListener('online', () => {
+            flushPretestQueue();
+            flushLearningEventQueue();
+        });
 
         function closeActiveLevelTimer() {
             if (!learningRecord.activeLevel || !learningRecord.activeLevelStartedAt) return;
@@ -2528,6 +2764,18 @@ div[id^="quizArea"] .quiz-option{
             studentInfo.consentAcknowledged = true;
             studentInfo.sessionMode = 'lesson1';
             initializeLearningRecord(false);
+
+            document.getElementById('loginPage').classList.add('hidden');
+            flushPretestQueue();
+            if (hasCompletedPretest()) {
+                beginLessonAfterPretest();
+            } else {
+                showPretest();
+            }
+        }
+
+        function beginLessonAfterPretest() {
+            document.getElementById('pretestPage').classList.add('hidden');
             queueLearningEvent({
                 level: 1,
                 activityCode: 'L1',
@@ -2537,24 +2785,10 @@ div[id^="quizArea"] .quiz-option{
             });
             flushLearningEventQueue();
 
-            // 隱藏登入頁面，顯示故事頁面
             document.getElementById('loginPage').classList.add('hidden');
             document.getElementById('storyPage').classList.remove('hidden');
-            document.getElementById('heroName').textContent = anonymousId;
-
-            // URL 教師模式：在網址後加 ?teacher=1 或 ?mode=teacher 可直接進入（略過登入/故事）
-            const params = new URLSearchParams(window.location.search);
-            const isTeacher = (params.get('teacher') === '1') || (params.get('mode') === 'teacher');
-            if (isTeacher) {
-                // 可選：透過 URL 預填資料 ?class=...&number=...
-                const c = params.get('class');
-                const n = params.get('number');
-                if (c) document.getElementById('studentClass').value = c;
-                if (n) document.getElementById('studentNumber').value = n;
-
-                quickStartTeacherMode();
-            }
-
+            document.getElementById('heroName').textContent = studentInfo.anonymousId;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         // 進入王國
