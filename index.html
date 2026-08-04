@@ -1708,7 +1708,7 @@ div[id^="quizArea"] .quiz-option{
             document.getElementById('pretestStatus').textContent = synced
                 ? '前測已同步。'
                 : '前測已保存在平板，恢復網路後會自動補傳。';
-            setTimeout(() => showPretestFinished(synced), 500);
+            showPretestFinished(synced);
         }
 
         function showPretestFinished(synced) {
