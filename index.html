@@ -1292,8 +1292,8 @@ div[id^="quizArea"] .quiz-option{
 <div class="level-content hidden" id="level4">
 <h2 class="level-title">第四關：揭示角度之間的秘密關係</h2>
 <div class="level-description">
-                    圓心國王和圓周精靈之間有一個被遺忘的契約：<strong>圓心角永遠是圓周角的2倍</strong>！<br/>
-                    你必須重新證明這個關係，破除混亂巫師的詛咒。讓我們同時觀察圓心角和圓周角！
+                    圓心國王與圓周精靈留下了三組角度紀錄，但關係已被混亂巫師抹去。<br/>
+                    請用同一段弧AB所對的圓心角與圓周角，找回它們之間的規律。
                 </div>
 <div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 10px; padding: 15px; margin: 20px 0; text-align: center;">
 <p style="color: #856404; margin-bottom: 10px; font-weight: bold;">你可以選擇：</p>
@@ -1311,10 +1311,12 @@ div[id^="quizArea"] .quiz-option{
 <div class="learning-right">
 <div class="instruction-box">
 <h4>📝 操作指南</h4>
-<p>圓周上已經標記了三個點A、B、C。你會同時看到：<br/>
-                        • 圓心角∠AOB（藍色）<br/>
-                        • 圓周角∠ACB（綠色）<br/>
-                        它們都對著同一段弧AB。<strong>請拖曳任何點</strong>，觀察兩個角度的關係！</p>
+<ul style="margin:0; padding-left:24px; line-height:1.8;">
+<li>固定C，只拖動A或B。</li>
+<li>每次停下後，按「記錄這一組」。</li>
+<li>記滿三組後，比較兩個角的數值。</li>
+</ul>
+<div id="level4MoveStatus" aria-live="polite" style="margin-top:10px;color:#495057;font-weight:bold;">目前只能移動A或B。</div>
 </div>
 <div class="info-panel">
 <div class="info-card central">
@@ -1331,14 +1333,23 @@ div[id^="quizArea"] .quiz-option{
 </div>
 </div>
 <div class="challenge-task">
-<h4>🎯 終極發現</h4>
-<p>你發現圓心角和圓周角之間有什麼規律？它們的比例是多少？</p>
-<label class="explore-check"><input type="checkbox"/> 我已拖曳點並記錄至少三組圓心角與圓周角。</label>
-<label class="explore-check"><input type="checkbox"/> 我已確認兩個角對著同一段弧AB。</label>
+<h4>🎯 觀察紀錄</h4>
+<p>畫面中的兩個角都對著紅色弧AB。請記錄三組不同數值。</p>
+<button class="btn btn-success" onclick="recordLevel4Pair()">＋ 記錄這一組</button>
+<div id="level4RecordStatus" aria-live="polite" style="margin:10px 0;color:#495057;font-weight:bold;">已記錄 0／3 組</div>
+<div style="overflow-x:auto;">
+<table style="width:100%;border-collapse:collapse;background:white;">
+<thead><tr><th style="padding:8px;border:1px solid #ced4da;">組別</th><th style="padding:8px;border:1px solid #ced4da;">圓心角</th><th style="padding:8px;border:1px solid #ced4da;">圓周角</th></tr></thead>
+<tbody id="level4RecordRows"><tr><td colspan="3" style="padding:10px;border:1px solid #ced4da;color:#6c757d;">尚未記錄</td></tr></tbody>
+</table>
+</div>
+<h4 style="margin-top:18px;">你的結論</h4>
+<p>同一段弧所對的圓心角，是圓周角的幾倍？</p>
 <div style="margin-top: 15px;">
 <input id="answerInput" placeholder="圓心角 = 圓周角 × ?" style="padding: 10px; font-size: 1.1em; border: 2px solid #ddd; border-radius: 5px; width: 200px;" type="text"/>
 <button class="btn btn-primary" onclick="checkAnswer4()" style="margin-left: 10px;">提交答案</button>
 </div>
+<div id="level4Support" style="display:none;margin-top:14px;"></div>
 </div>
 </div>
 </div>
@@ -1350,7 +1361,7 @@ div[id^="quizArea"] .quiz-option{
 <div class="feedback" id="feedback4"></div>
 <div class="btn-group">
 <button class="btn btn-success" onclick="resetLevel(4)">重新開始</button>
-<button class="btn btn-primary" onclick="startLevelQuiz(4)">進行關卡測驗 →</button>
+<button class="btn btn-primary" onclick="startLevel4Quiz()">進行關卡測驗 →</button>
 </div>
 </div>
 <!-- 關卡測驗區域 -->
@@ -1531,7 +1542,7 @@ div[id^="quizArea"] .quiz-option{
             1: { points: [], canvas: null, ctx: null },
             2: { points: [], canvas: null, ctx: null },
             3: { points: [], canvas: null, ctx: null, taskMode: 'A', allowedSide: null, hintLevel: 0 },
-            4: { points: [], canvas: null, ctx: null },
+            4: { points: [], canvas: null, ctx: null, records: [], answerConfirmed: false },
             5: { points: [], canvas: null, ctx: null }
         };
 
@@ -2279,7 +2290,7 @@ div[id^="quizArea"] .quiz-option{
             const answer = finalOptions.indexOf(`${ins}°`);
             return {
                 hasFigure: true,
-                question: `如圖，圓心角 ∠AOB = ${theta}°，且點 C 在圓周上。則圓周角 ∠ACB 的度數為多少？`,
+                question: `如圖，圓心角 ∠AOB 與圓周角 ∠ACB 都對著同一段弧AB。若 ∠AOB = ${theta}°，則 ∠ACB 的度數為多少？`,
                 figure: _wrapSvg(elements.join('')),
                 options: finalOptions,
                 answer: answer >= 0 ? answer : 0
@@ -2417,8 +2428,7 @@ div[id^="quizArea"] .quiz-option{
                 { question: "下列哪個敘述正確？", options: ["同弧的圓周角皆相等", "同弧的圓周角皆不同", "圓周角一定大於圓心角", "圓周角與弧無關"], answer: 0 }
             ],
             level4: [
-                { question: "判斷：若 ∠AOB = 2×∠ACB，則兩角必對同一弧 AB。", options: ["正確", "錯誤", "需看圓半徑", "需看弧長"], answer: 0 },
-                { question: "若一圓周角為 90°，其所對的弧最可能是：", options: ["劣弧", "半圓弧", "優弧", "不一定"], answer: 1 },
+                { question: "只知道 ∠AOB 的度數是 ∠ACB 的2倍，可以立刻判定兩角對同一弧嗎？", options: ["可以", "不可以，還要確認兩角所對的弧", "要看圓半徑", "要看弧長"], answer: 1, hint: "倍數關係必須在兩角對同一弧的條件下使用；不能只比較兩個度數。" },
                 { question: "若圓心角比圓周角大 30°，且兩角對同一弧，則圓周角為：", options: ["15°", "30°", "60°", "90°"], answer: 1 },
                 { question: "同一圓中，對同一弧的圓心角與圓周角的關係是：", options: ["相等", "圓心角是圓周角的 2 倍", "圓周角是圓心角的 2 倍", "無法判斷"], answer: 1 }
             ],
@@ -2446,7 +2456,6 @@ div[id^="quizArea"] .quiz-option{
 
             // level 4：圓心角×圓周角倍數
             levelQuizData.level4.push(Q_inscribed_half_of_central);
-            levelQuizData.level4.push(Q_diameter_right_angle);
             EXTRA_TEXT.level4.forEach(q => levelQuizData.level4.push(q));
 
             // level 5：綜合與迷思澄清
@@ -2664,15 +2673,15 @@ div[id^="quizArea"] .quiz-option{
                 },
                 {
                     question: "如果圓周角∠ACB = 40°，圓心角∠AOB = 80°，它們對著同一弧嗎？",
-                    options: ["一定對著同一弧", "一定不對同一弧", "可能對也可能不對", "無法判斷"],
-                    answer: 0,
-                    explanation: "因為∠AOB正好是∠ACB的2倍（80° = 40° × 2），所以它們一定對著同一段弧。"
+                    options: ["一定對著同一弧", "一定不對同一弧", "只看度數無法確認，還要檢查所對的弧", "只要在同一個圓就可以"],
+                    answer: 2,
+                    explanation: "80°雖然是40°的2倍，但倍數相符不能反推兩角一定對同一弧；仍要從圖形確認弧的兩個端點。"
                 },
                 {
-                    question: "為什麼圓心角會是圓周角的2倍？",
-                    options: ["因為圓心距離弧更近", "因為圓心角的頂點在圓心", "這只是巧合", "因為圓周角更大"],
-                    answer: 1,
-                    explanation: "這是因為圓心角的頂點在圓心，而圓周角的頂點在圓周上。從幾何關係可以證明圓心角恆為圓周角的2倍。"
+                    question: "使用『圓心角是圓周角2倍』時，必須先確認哪一項條件？",
+                    options: ["兩角大小都小於90°", "兩角在同一個三角形", "兩角對著同一段弧", "圓的半徑是整數"],
+                    answer: 2,
+                    explanation: "倍數關係的必要條件是圓心角與圓周角對著同一段弧。"
                 }
             ],
             level5: [ // 第五關：終極挑戰（綜合題）
@@ -2948,12 +2957,13 @@ function enterKingdom() {
             document.querySelectorAll('.level-indicator').forEach(el => {
                 el.addEventListener('click', () => {
                     const level = parseInt(el.dataset.level);
+                    const isTeacherTest = studentInfo.recordType === 'teacher-test' || studentInfo.sessionMode === 'teacher-free';
                     if (isLessonOne && level > 3) {
                         alert(level === 6 ? '能力測驗將在第三節開放！' : '第四、第五關將在第二節開放！');
                         return;
                     }
                     // 第一關或已完成的關卡可以進入，未完成的關卡需要完成前一關
-                    if (level === 1 || levelCompleted[level - 1]) {
+                    if (isTeacherTest || level === 1 || levelCompleted[level - 1]) {
                         nextLevel(level);
                     } else {
                         alert(`請先完成第${level - 1}關的測驗才能進入第${level}關！`);
@@ -3503,6 +3513,10 @@ function setupCanvas(levelNum) {
                             : '任務B請固定A、B，只移動C。', true);
                         return;
                     }
+                    if (levelNum === 4 && point.label === 'C') {
+                        updateLevel4MoveStatus('第四關請固定C，只移動A或B。', true);
+                        return;
+                    }
                     dragging = true;
                     dragPoint = point;
                     try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
@@ -3583,6 +3597,8 @@ function setupCanvas(levelNum) {
                 updateLevel3ModeStatus('目前：任務B，只能移動C；C須留在弧AB同一側。');
             } else if (levelNum === 3) {
                 updateLevel3ModeStatus('目前：任務A，只能移動A或B。');
+            } else if (levelNum === 4) {
+                updateLevel4MoveStatus('目前只能移動A或B。');
             }
 
             point.x = nextX;
@@ -4162,6 +4178,70 @@ function setupCanvas(levelNum) {
         }
 
         // ===== Level 4: 關係實驗室 =====
+        function updateLevel4MoveStatus(message, isError = false) {
+            const status = document.getElementById('level4MoveStatus');
+            if (!status) return;
+            status.textContent = message;
+            status.style.color = isError ? '#c92a2a' : '#495057';
+        }
+
+        function getLevel4AnglePair() {
+            const points = levels[4].points;
+            if (points.length !== 3) return null;
+            const [a, b, c] = points;
+            const angleCA = Math.atan2(a.y - c.y, a.x - c.x);
+            const angleCB = Math.atan2(b.y - c.y, b.x - c.x);
+            let diff = (angleCB - angleCA) * 180 / Math.PI;
+            while (diff < 0) diff += 360;
+            while (diff > 360) diff -= 360;
+            const inscribed = diff <= 180 ? diff : 360 - diff;
+            const central = Math.round(Math.max(0, Math.min(360, inscribed * 2)));
+            return {
+                central,
+                inscribed: central / 2
+            };
+        }
+
+        function renderLevel4Records() {
+            const records = levels[4].records || [];
+            const rows = document.getElementById('level4RecordRows');
+            const status = document.getElementById('level4RecordStatus');
+            if (status) status.textContent = `已記錄 ${records.length}／3 組`;
+            if (!rows) return;
+            rows.innerHTML = records.length
+                ? records.map((item, index) => `<tr><td style="padding:8px;border:1px solid #ced4da;">${index + 1}</td><td style="padding:8px;border:1px solid #ced4da;">${item.central}°</td><td style="padding:8px;border:1px solid #ced4da;">${item.inscribed}°</td></tr>`).join('')
+                : '<tr><td colspan="3" style="padding:10px;border:1px solid #ced4da;color:#6c757d;">尚未記錄</td></tr>';
+        }
+
+        function recordLevel4Pair() {
+            const pair = getLevel4AnglePair();
+            if (!pair || pair.inscribed <= 0) return;
+            levels[4].records = levels[4].records || [];
+            if (levels[4].records.length >= 3) {
+                updateLevel4MoveStatus('已記滿三組，請比較數值並提出結論。');
+                return;
+            }
+            if (levels[4].records.some(item => item.central === pair.central && item.inscribed === pair.inscribed)) {
+                updateLevel4MoveStatus('這組數值已記錄，請先拖動A或B再記錄。', true);
+                return;
+            }
+            levels[4].records.push(pair);
+            renderLevel4Records();
+            earnStar(4, levels[4].records.length >= 3 ? 2 : 1);
+            queueLearningEvent({
+                level: 4,
+                activityCode: 'L4',
+                eventType: 'EXPLORATION_RECORDED',
+                eventName: '第四關角度觀察紀錄',
+                value1Name: 'centralAngle',
+                value1: pair.central,
+                value2Name: 'inscribedAngle',
+                value2: pair.inscribed,
+                rawData: { recordNumber: levels[4].records.length }
+            });
+            updateLevel4MoveStatus(levels[4].records.length >= 3 ? '已記滿三組，請比較數值並提出結論。' : '請再拖動A或B，記錄不同的一組。');
+        }
+
         function drawLevel4() {
             const ctx = levels[4].ctx;
             const canvas = levels[4].canvas;
@@ -4313,44 +4393,79 @@ function setupCanvas(levelNum) {
         }
 
         function checkLevel4Progress() {
-            const points = levels[4].points;
-
-            if (points.length === 3) {
-                const [a, b, c] = points;
-                
-                // 計算圓心角（對應同一個「圓周角所對弧」）：圓心角 = 2 × 圓周角（可為大弧）
-                // 計算圓周角
-                const angleCA = Math.atan2(a.y - c.y, a.x - c.x);
-                const angleCB = Math.atan2(b.y - c.y, b.x - c.x);
-                let inscribedAngleDiff = (angleCB - angleCA) * 180 / Math.PI;
-                while (inscribedAngleDiff < 0) inscribedAngleDiff += 360;
-                while (inscribedAngleDiff > 360) inscribedAngleDiff -= 360;
-                let inscribedAngle = inscribedAngleDiff <= 180 ? inscribedAngleDiff : 360 - inscribedAngleDiff;
-
-                let centralAngle = Math.max(0, Math.min(360, inscribedAngle * 2));
-                const ratio = (centralAngle / inscribedAngle).toFixed(2);
-                
-                document.getElementById('centralAngle4').textContent = centralAngle.toFixed(0) + '°';
-                document.getElementById('inscribedAngle4').textContent = inscribedAngle.toFixed(0) + '°';
-                document.getElementById('ratio4').textContent = ratio + ' : 1';
-                
-                earnStar(4, 1);
-                if (Math.abs(ratio - 2) < 0.1) {
-                    earnStar(4, 2);
-                }
-            }
+            const pair = getLevel4AnglePair();
+            if (!pair) return;
+            document.getElementById('centralAngle4').textContent = pair.central + '°';
+            document.getElementById('inscribedAngle4').textContent = pair.inscribed + '°';
+            document.getElementById('ratio4').textContent = '--';
         }
 
         function checkAnswer4() {
-            const answer = document.getElementById('answerInput').value;
+            const answer = document.getElementById('answerInput').value.trim();
+            const support = document.getElementById('level4Support');
+            if ((levels[4].records || []).length < 3) {
+                showFeedback(4, '請先拖動A或B並記錄三組不同數值，再提出結論。', 'info');
+                return;
+            }
             if (answer === '2' || answer === '2.0') {
-                showFeedback(4, '🎉 太棒了！你發現了圓的重要定理：圓心角 = 圓周角 × 2（或者說，圓周角是圓心角的一半）！', 'success');
+                levels[4].answerConfirmed = true;
+                document.getElementById('ratio4').textContent = '2 : 1';
+                showFeedback(4, '🎉 根據三組紀錄，你發現：同一弧所對的圓心角是圓周角的2倍。', 'success');
                 earnStar(4, 3);
                 document.getElementById('answerInput').style.borderColor = '#28a745';
+                if (support) support.style.display = 'none';
+                queueLearningEvent({
+                    level: 4,
+                    activityCode: 'L4',
+                    eventType: 'CONCLUSION_SUBMITTED',
+                    eventName: '第四關倍數結論',
+                    selectedAnswer: answer,
+                    correct: true,
+                    rawData: { records: levels[4].records }
+                });
             } else {
-                showFeedback(4, '再試試看！仔細觀察兩個角度的比例關係。', 'info');
+                levels[4].answerConfirmed = false;
+                showFeedback(4, '答案還需要調整。請選擇重新學習，或查看依照三組紀錄提供的提示。', 'info');
                 document.getElementById('answerInput').style.borderColor = '#dc3545';
+                if (support) {
+                    support.style.display = 'block';
+                    support.innerHTML = '<button class="btn btn-success" onclick="resetLevel4Learning()" style="margin:5px;">📚 重新學習</button><button class="btn btn-warning" onclick="showLevel4Hint()" style="margin:5px;">💡 椿椿老師給我提示</button><div id="level4HintText" style="display:none;margin-top:10px;padding:12px;background:#fff3cd;border:2px solid #ffc107;border-radius:8px;color:#664d03;"></div>';
+                }
+                queueLearningEvent({
+                    level: 4,
+                    activityCode: 'L4',
+                    eventType: 'CONCLUSION_SUBMITTED',
+                    eventName: '第四關倍數結論',
+                    selectedAnswer: answer,
+                    correct: false,
+                    misconceptionCode: 'M6_CENTRAL_INSCRIBED_RATIO'
+                });
             }
+        }
+
+        function showLevel4Hint() {
+            const panel = document.getElementById('level4HintText');
+            if (!panel) return;
+            const records = levels[4].records || [];
+            const examples = records.map(item => `${item.central} ÷ ${item.inscribed}`).join('、');
+            panel.textContent = `請分別計算：${examples}。看看三個商是否相同，再把共同的商填入答案框。`;
+            panel.style.display = 'block';
+            learningRecord.hintEvents.push({ level: 4, usedAt: new Date().toISOString(), hintLevel: 1, source: 'level4-records' });
+            saveProgress();
+            queueLearningEvent({ level: 4, activityCode: 'L4', eventType: 'HINT_USED', eventName: '第四關紀錄提示', hintLevel: 1, hintUsed: true });
+        }
+
+        function resetLevel4Learning() {
+            resetLevel(4);
+            window.scrollTo({ top: document.getElementById('learningArea4').offsetTop - 20, behavior: 'smooth' });
+        }
+
+        function startLevel4Quiz() {
+            if ((levels[4].records || []).length < 3 || !levels[4].answerConfirmed) {
+                showFeedback(4, '請先完成三組觀察紀錄並提出正確結論，再進行關卡測驗。', 'info');
+                return;
+            }
+            startLevelQuiz(4);
         }
 
         // ===== Level 5: 終極挑戰 =====
@@ -4640,12 +4755,13 @@ function setupCanvas(levelNum) {
         }
 
         function nextLevel(levelNum) {
-            if (studentInfo.sessionMode === 'lesson1' && levelNum > 3) {
+            const isTeacherTest = studentInfo.recordType === 'teacher-test' || studentInfo.sessionMode === 'teacher-free';
+            if (!isTeacherTest && studentInfo.sessionMode === 'lesson1' && levelNum > 3) {
                 alert(levelNum === 6 ? '能力測驗將在第三節開放！' : '第四、第五關將在第二節開放！');
                 return;
             }
             // 檢查關卡是否已解鎖（第一關和已完成的關卡可以進入）
-            if (levelNum > 1 && levelNum <= 5 && !levelCompleted[levelNum - 1]) {
+            if (!isTeacherTest && levelNum > 1 && levelNum <= 5 && !levelCompleted[levelNum - 1]) {
                 alert('請先完成前一關的測驗！');
                 return;
             }
@@ -4755,6 +4871,18 @@ function setupCanvas(levelNum) {
                     }
                 ];
             } else if (levelNum === 4) {
+                levels[levelNum].records = [];
+                levels[levelNum].answerConfirmed = false;
+                const answerInput = document.getElementById('answerInput');
+                const support = document.getElementById('level4Support');
+                if (answerInput) {
+                    answerInput.value = '';
+                    answerInput.style.borderColor = '#ddd';
+                }
+                if (support) {
+                    support.style.display = 'none';
+                    support.innerHTML = '';
+                }
                 // 第四關：自動添加三個點 A、B、C
                 const angle1 = Math.PI / 6; // 30度
                 const angle2 = angle1 + Math.PI * 2 / 3; // 30 + 120 = 150度
@@ -4779,6 +4907,8 @@ function setupCanvas(levelNum) {
                         label: 'C'
                     }
                 ];
+                renderLevel4Records();
+                updateLevel4MoveStatus('目前只能移動A或B。');
             } else if (levelNum === 5) {
                 // 第五關：自動添加五個點 A、B、C、D、E
                 const angle1 = 0; // 0度
