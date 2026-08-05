@@ -925,11 +925,12 @@ div[id^="quizArea"] .quiz-option{
 <div class="entry-home">
 <div style="text-align:center;">
 <h2 style="font-size:2.2rem; color:#343a40; margin-bottom:10px;">請選擇今天的任務</h2>
-<p style="font-size:1.1rem; color:#6c757d;">前測與第一節探索可在不同時段、分開完成。</p>
+<p style="font-size:1.1rem; color:#6c757d;">請依照老師指定的課程時段選擇入口，每次都要重新輸入班級與座號。</p>
 </div>
 <div class="entry-choice-grid">
 <button class="entry-choice" type="button" onclick="chooseEntryMode('pretest')"><div style="font-size:3rem;">📝</div><h3>進行課前前測</h3><p>完成前測後即可關閉網頁並交回平板。</p></button>
-<button class="entry-choice" type="button" onclick="chooseEntryMode('lesson1')"><div style="font-size:3rem;">🏰</div><h3>進入第一節探索</h3><p>上課時由老師指示，再進入圓周角王國。</p></button>
+<button class="entry-choice" type="button" onclick="chooseEntryMode('lesson1')"><div style="font-size:3rem;">🏰</div><h3>進入第一節探索</h3><p>依序完成第一關至第三關。</p></button>
+<button class="entry-choice" type="button" onclick="chooseEntryMode('lesson2')"><div style="font-size:3rem;">🔍</div><h3>進入第二節探索</h3><p>直接從第四關開始，不必重做前三關。</p></button>
 </div>
 </div>
 </div>
@@ -2788,14 +2789,18 @@ div[id^="quizArea"] .quiz-option{
         }
 
         function chooseEntryMode(mode) {
-            selectedEntryMode = mode === 'pretest' ? 'pretest' : 'lesson1';
+            selectedEntryMode = ['pretest', 'lesson1', 'lesson2'].includes(mode) ? mode : 'lesson1';
             document.getElementById('entryHomePage').classList.add('hidden');
             document.getElementById('loginPage').classList.remove('hidden');
-            document.getElementById('loginModeTitle').textContent = selectedEntryMode === 'pretest' ? '📝 登入課前前測' : '🏰 登入第一節探索';
-            document.getElementById('loginModeDescription').textContent = selectedEntryMode === 'pretest'
-                ? '請重新選擇班級代碼並輸入座號，完成後即可交回平板。'
-                : '請重新選擇班級代碼並輸入座號，再進入圓周角王國。';
-            document.getElementById('loginContinueButton').textContent = selectedEntryMode === 'pretest' ? '開始前測' : '開始第一節探索';
+            const entryLabels = {
+                pretest: ['📝 登入課前前測', '請重新選擇班級代碼並輸入座號，完成後即可交回平板。', '開始前測'],
+                lesson1: ['🏰 登入第一節探索', '請重新選擇班級代碼並輸入座號，依序完成第一至第三關。', '開始第一節探索'],
+                lesson2: ['🔍 登入第二節探索', '請重新選擇班級代碼並輸入座號，登入後直接從第四關開始。', '開始第二節探索']
+            };
+            const [title, description, buttonText] = entryLabels[selectedEntryMode];
+            document.getElementById('loginModeTitle').textContent = title;
+            document.getElementById('loginModeDescription').textContent = description;
+            document.getElementById('loginContinueButton').textContent = buttonText;
             document.getElementById('studentClass').value = '';
             document.getElementById('studentNumber').value = '';
             document.getElementById('dataConsent').checked = false;
@@ -2851,6 +2856,8 @@ div[id^="quizArea"] .quiz-option{
                 } else {
                     showPretest();
                 }
+            } else if (selectedEntryMode === 'lesson2') {
+                beginSecondLesson();
             } else {
                 beginLesson();
             }
@@ -2871,6 +2878,21 @@ div[id^="quizArea"] .quiz-option{
             document.getElementById('storyPage').classList.remove('hidden');
             document.getElementById('heroName').textContent = studentInfo.anonymousId;
             window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function beginSecondLesson() {
+            document.getElementById('pretestPage').classList.add('hidden');
+            queueLearningEvent({
+                level: 4,
+                activityCode: 'L4',
+                eventType: 'SESSION_STARTED',
+                eventName: '第二節課開始',
+                rawData: { sessionMode: studentInfo.sessionMode, consentAcknowledged: true }
+            });
+            flushLearningEventQueue();
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('storyPage').classList.add('hidden');
+            enterKingdom();
         }
 
         // 進入王國
@@ -2906,21 +2928,23 @@ function enterKingdom() {
             document.getElementById('storyPage').classList.add('hidden');
             document.getElementById('progressBar').classList.remove('hidden');
             const isLessonOne = studentInfo.sessionMode === 'lesson1';
+            const isLessonTwo = studentInfo.sessionMode === 'lesson2';
+            const isStructuredLesson = isLessonOne || isLessonTwo;
             
             // 顯示進度條
             const progressBar = document.getElementById('progressBar');
             progressBar.innerHTML = `
-                <div class="level-indicator active" data-level="1">
+                <div class="level-indicator active${isLessonTwo ? ' lesson-locked' : ''}" data-level="1" aria-disabled="${isLessonTwo}">
                     <div>第一關</div>
-                    <small>初識圓與弧</small>
+                    <small>${isLessonTwo ? '第一節內容' : '初識圓與弧'}</small>
                 </div>
-                <div class="level-indicator" data-level="2">
+                <div class="level-indicator${isLessonTwo ? ' lesson-locked' : ''}" data-level="2" aria-disabled="${isLessonTwo}">
                     <div>第二關</div>
-                    <small>圓心角探索</small>
+                    <small>${isLessonTwo ? '第一節內容' : '圓心角探索'}</small>
                 </div>
-                <div class="level-indicator" data-level="3">
+                <div class="level-indicator${isLessonTwo ? ' lesson-locked' : ''}" data-level="3" aria-disabled="${isLessonTwo}">
                     <div>第三關</div>
-                    <small>圓周角探秘</small>
+                    <small>${isLessonTwo ? '第一節內容' : '圓周角探秘'}</small>
                 </div>
                 <div class="level-indicator${isLessonOne ? ' lesson-locked' : ''}" data-level="4" aria-disabled="${isLessonOne}">
                     <div>第四關</div>
@@ -2930,9 +2954,9 @@ function enterKingdom() {
                     <div>第五關</div>
                     <small>${isLessonOne ? '第二節開放' : '終極挑戰'}</small>
                 </div>
-                <div class="level-indicator${isLessonOne ? ' lesson-locked' : ''}" data-level="6" aria-disabled="${isLessonOne}">
+                <div class="level-indicator${isStructuredLesson ? ' lesson-locked' : ''}" data-level="6" aria-disabled="${isStructuredLesson}">
                     <div>第六關</div>
-                    <small>${isLessonOne ? '第三節開放' : '能力測驗'}</small>
+                    <small>${isStructuredLesson ? '第三節開放' : '能力測驗'}</small>
                 </div>
             `;
 
@@ -2945,12 +2969,20 @@ function enterKingdom() {
                 }
                 lessonNotice.innerHTML = '<strong>第一節課堂模式</strong>｜本節依序完成第一至第三關；第四關之後將在下一節開放。';
                 lessonNotice.style.cssText = 'background:#fff3cd;border:2px solid #ffc107;border-radius:10px;padding:14px 18px;margin:0 auto 20px;max-width:1100px;color:#664d03;text-align:center;line-height:1.5;';
+            } else if (isLessonTwo) {
+                if (!lessonNotice) {
+                    lessonNotice = document.createElement('div');
+                    lessonNotice.id = 'lessonModeNotice';
+                    progressBar.insertAdjacentElement('afterend', lessonNotice);
+                }
+                lessonNotice.innerHTML = '<strong>第二節課堂模式</strong>｜本節直接從第四關開始，依序完成第四、第五關。';
+                lessonNotice.style.cssText = 'background:#e7f5ff;border:2px solid #339af0;border-radius:10px;padding:14px 18px;margin:0 auto 20px;max-width:1100px;color:#1864ab;text-align:center;line-height:1.5;';
             } else if (lessonNotice) {
                 lessonNotice.remove();
             }
 
             document.querySelectorAll('button[onclick^="skipToLevelQuiz"]').forEach(button => {
-                button.style.display = isLessonOne ? 'none' : '';
+                button.style.display = isStructuredLesson ? 'none' : '';
             });
             
             // 添加進度條點擊事件
@@ -2962,8 +2994,12 @@ function enterKingdom() {
                         alert(level === 6 ? '能力測驗將在第三節開放！' : '第四、第五關將在第二節開放！');
                         return;
                     }
+                    if (isLessonTwo && (level < 4 || level > 5)) {
+                        alert(level < 4 ? '第一至第三關為第一節內容，本節請從第四關開始。' : '能力測驗將在第三節開放！');
+                        return;
+                    }
                     // 第一關或已完成的關卡可以進入，未完成的關卡需要完成前一關
-                    if (isTeacherTest || level === 1 || levelCompleted[level - 1]) {
+                    if (isTeacherTest || level === 1 || (isLessonTwo && level === 4) || levelCompleted[level - 1]) {
                         nextLevel(level);
                     } else {
                         alert(`請先完成第${level - 1}關的測驗才能進入第${level}關！`);
@@ -2973,6 +3009,15 @@ function enterKingdom() {
             
             // 嘗試載入之前的進度
             const hasProgress = loadProgress();
+            if (isLessonTwo) {
+                if (levelCompleted[5]) {
+                    nextLevel(5);
+                    showSecondLessonComplete();
+                } else {
+                    nextLevel(levelCompleted[4] ? 5 : 4);
+                }
+                return;
+            }
             if (hasProgress) {
                 // 找到最後完成的關卡
                 let lastCompletedLevel = 0;
@@ -3230,6 +3275,14 @@ function enterKingdom() {
                         <h3 style="color: #155724; margin-bottom: 15px;">🎉 第一節探索完成！</h3>
                         <p style="color: #155724; font-size: 1.1em; margin-bottom: 8px;">你已完成弧、圓心角與圓周角的基礎探索。</p>
                         <p style="color: #155724;">請依教師指示填寫課末紀錄；第四、第五關將在第二節開放。</p>
+                        ${getLessonExportHtml()}
+                    </div>`;
+                } else if (studentInfo.sessionMode === 'lesson2' && level === 5) {
+                    btnGroup.innerHTML = `
+                    <div class="success-message fade-in" style="background: #d4edda; border: 2px solid #28a745; border-radius: 10px; padding: 20px; margin: 20px 0; text-align: center;">
+                        <h3 style="color: #155724; margin-bottom: 15px;">🎉 第二節探索完成！</h3>
+                        <p style="color: #155724; font-size: 1.1em; margin-bottom: 8px;">你已完成第四、第五關的關係探索與綜合挑戰。</p>
+                        <p style="color: #155724;">能力測驗與回饋將在第三節開放。</p>
                         ${getLessonExportHtml()}
                     </div>`;
                 } else {
@@ -4671,8 +4724,10 @@ function setupCanvas(levelNum) {
 
         function getLessonExportHtml() {
             const snapshot = getLearningRecordSnapshot();
-            const lessonTime = [1, 2, 3].reduce((sum, level) => sum + (snapshot.levelTimeMs[level] || 0), 0);
-            const attempts = snapshot.quizAttempts.filter(item => item.level <= 3).length;
+            const lessonLevels = studentInfo.sessionMode === 'lesson2' ? [4, 5] : [1, 2, 3];
+            const lessonLabel = studentInfo.sessionMode === 'lesson2' ? '第四、第五關' : '前三關';
+            const lessonTime = lessonLevels.reduce((sum, level) => sum + (snapshot.levelTimeMs[level] || 0), 0);
+            const attempts = snapshot.quizAttempts.filter(item => lessonLevels.includes(item.level)).length;
             const checkedCount = Object.values(snapshot.explorationChecks).filter(item => item && item.checked).length;
             const isTeacherMode = studentInfo.recordType !== 'student';
             const actionHtml = isTeacherMode
@@ -4689,7 +4744,7 @@ function setupCanvas(levelNum) {
                 <small style="display:block;margin-top:10px;color:#495057;">若顯示等待同步，資料仍安全保存在這台平板，請保持網路連線後按「重新同步」。</small>`;
             return `<div style="margin-top:18px;padding:16px;background:#fff;border:2px solid #8ce99a;border-radius:10px;color:#2b8a3e;">
                 <strong>個人學習摘要</strong><br>
-                匿名代碼：${escapeQuizText(snapshot.anonymousId)}｜前三關學習時間：約${formatLearningDuration(lessonTime)}<br>
+                匿名代碼：${escapeQuizText(snapshot.anonymousId)}｜${lessonLabel}學習時間：約${formatLearningDuration(lessonTime)}<br>
                 測驗提交：${attempts}次｜已勾選探索任務：${checkedCount}項
                 ${actionHtml}
             </div>`;
@@ -4729,7 +4784,8 @@ function setupCanvas(levelNum) {
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `${snapshot.anonymousId || 'UNKNOWN'}_第一節學習紀錄.${isCsv ? 'csv' : 'json'}`;
+            const lessonName = studentInfo.sessionMode === 'lesson2' ? '第二節' : '第一節';
+            link.download = `${snapshot.anonymousId || 'UNKNOWN'}_${lessonName}學習紀錄.${isCsv ? 'csv' : 'json'}`;
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -4754,14 +4810,38 @@ function setupCanvas(levelNum) {
             }
         }
 
+        function showSecondLessonComplete() {
+            if (studentInfo.sessionMode !== 'lesson2') return;
+            const quizArea = document.getElementById('quizArea5');
+            if (!quizArea) return;
+            quizArea.classList.remove('hidden');
+            const btnGroup = quizArea.querySelector('.btn-group');
+            if (btnGroup) {
+                btnGroup.innerHTML = `
+                    <div class="success-message fade-in" style="background:#d4edda;border:2px solid #28a745;border-radius:10px;padding:20px;margin:20px 0;text-align:center;">
+                        <h3 style="color:#155724;margin-bottom:15px;">🎉 第二節探索已完成</h3>
+                        <p style="color:#155724;">你已完成第四、第五關；能力測驗與回饋將在第三節開放。</p>
+                        ${getLessonExportHtml()}
+                    </div>`;
+                updateSyncStatusDisplay();
+                flushLearningEventQueue();
+            }
+        }
+
         function nextLevel(levelNum) {
             const isTeacherTest = studentInfo.recordType === 'teacher-test' || studentInfo.sessionMode === 'teacher-free';
+            const isLessonTwo = studentInfo.sessionMode === 'lesson2';
             if (!isTeacherTest && studentInfo.sessionMode === 'lesson1' && levelNum > 3) {
                 alert(levelNum === 6 ? '能力測驗將在第三節開放！' : '第四、第五關將在第二節開放！');
                 return;
             }
+            if (!isTeacherTest && isLessonTwo && (levelNum < 4 || levelNum > 5)) {
+                alert(levelNum < 4 ? '第一至第三關為第一節內容，本節請從第四關開始。' : '能力測驗將在第三節開放！');
+                return;
+            }
             // 檢查關卡是否已解鎖（第一關和已完成的關卡可以進入）
-            if (!isTeacherTest && levelNum > 1 && levelNum <= 5 && !levelCompleted[levelNum - 1]) {
+            const requiresPreviousLevel = !isLessonTwo || levelNum === 5;
+            if (!isTeacherTest && requiresPreviousLevel && levelNum > 1 && levelNum <= 5 && !levelCompleted[levelNum - 1]) {
                 alert('請先完成前一關的測驗！');
                 return;
             }
@@ -6986,7 +7066,9 @@ function selectAnswer(questionId, optionIndex) {
       var _enter = window.enterKingdom;
       var wrappedEnter = function(){
         _enter();
-        var lvl = (typeof window.currentLevel === 'number' && window.currentLevel) ? window.currentLevel : 1;
+        var activeIndicator = document.querySelector('.level-indicator.active');
+        var lvl = activeIndicator ? parseInt(activeIndicator.dataset.level, 10) : 1;
+        if(!lvl || isNaN(lvl)) lvl = 1;
         forceShowOnly(lvl);
       };
       wrappedEnter.__finalPatched = true;
