@@ -1382,9 +1382,8 @@ div[id^="quizArea"] .quiz-option{
 <div class="level-content hidden" id="level5">
 <h2 class="level-title">第五關：證明你的智慧</h2>
 <div class="level-description">
-                    混亂巫師出現了！他要測試你是否真的理解所有角度的秘密。<br/>
-                    只有通過他的考驗，才能完全淨化王國，恢復所有角度精靈的記憶！<br/>
-<strong>運用你學到的知識，完成這一關挑戰！</strong>
+                    混亂巫師把三個圓周角移到不同位置，角度不再全部相同。<br/>
+                    請固定A、B，調整C、D、E的位置，使三個圓周角一致，再判斷它們與弧AB的關係。
 </div>
 <div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 10px; padding: 15px; margin: 20px 0; text-align: center;">
 <p style="color: #856404; margin-bottom: 10px; font-weight: bold;">你可以選擇：</p>
@@ -1400,10 +1399,14 @@ div[id^="quizArea"] .quiz-option{
 </div>
 </div>
 <div class="learning-right">
-<div class="challenge-task">
-<h4>🏆 挑戰：同弧圓周角驗證器</h4>
-<p>圓周上已經標記了五個點（A、B、C、D、E），其中C、D、E與固定的A、B形成不同的圓周角。<br/>
-<strong>請拖曳C、D、E點</strong>，觀察並驗證：對同一弧AB的所有圓周角是否相等？</p>
+<div class="instruction-box">
+<h4>📝 操作指南</h4>
+<ul style="margin:0; padding-left:24px; line-height:1.8;">
+<li>固定A、B，只拖動C、D、E。</li>
+<li>三個點都要至少移動一次。</li>
+<li>把三個圓周角調整到一樣大。</li>
+</ul>
+<div id="level5MoveStatus" aria-live="polite" style="margin-top:10px;color:#495057;font-weight:bold;">已移動 0／3 點。</div>
 </div>
 <div class="info-panel">
 <div class="info-card inscribed">
@@ -1420,13 +1423,19 @@ div[id^="quizArea"] .quiz-option{
 </div>
 </div>
 <div class="challenge-task">
-<h4>🎯 問題：這三個圓周角相等嗎？</h4>
-<label class="explore-check"><input type="checkbox"/> 我已分別拖曳C、D、E並比較三個角度。</label>
-<label class="explore-check"><input type="checkbox"/> 我已確認三個圓周角都對著同一段弧AB。</label>
+<h4>🎯 挑戰任務</h4>
+<p>分別拖動C、D、E，讓三個圓周角的度數一致（誤差±1°）。</p>
+<label class="explore-check"><input disabled id="level5MoveCheck" type="checkbox"/> 我已分別移動C、D、E。</label>
+<label class="explore-check"><input disabled id="level5EqualCheck" type="checkbox"/> 我已把三個圓周角調整到一樣大。</label>
+<label class="explore-check"><input disabled id="level5ConclusionCheck" type="checkbox"/> 我已根據成功位置判斷三個角是否對同一段弧AB。</label>
+<div id="level5ChallengeStatus" aria-live="polite" style="margin:10px 0;color:#495057;font-weight:bold;">目前三角尚未一致。</div>
+<h4 style="margin-top:16px;">你的判斷</h4>
+<p>挑戰成功時，這三個圓周角是否都對著同一段紅色弧AB？</p>
 <div style="margin-top: 15px;">
-<button class="btn btn-success" onclick="checkEqual5(true)" style="margin: 5px;">是，它們相等</button>
-<button class="btn btn-primary" onclick="checkEqual5(false)" style="margin: 5px;">不，它們不相等</button>
+<button class="btn btn-success" onclick="checkEqual5(true)" style="margin: 5px;">是，都對著同一弧AB</button>
+<button class="btn btn-primary" onclick="checkEqual5(false)" style="margin: 5px;">不，不是同一弧AB</button>
 </div>
+<div id="level5Support" style="display:none;margin-top:14px;"></div>
 </div>
 </div>
 </div>
@@ -1438,7 +1447,7 @@ div[id^="quizArea"] .quiz-option{
 <div class="feedback" id="feedback5"></div>
 <div class="btn-group">
 <button class="btn btn-success" onclick="resetLevel(5)">重新開始</button>
-<button class="btn btn-primary" onclick="startLevelQuiz(5)">進行關卡測驗 →</button>
+<button class="btn btn-primary" onclick="startLevel5Quiz()">進行關卡測驗 →</button>
 </div>
 </div>
 <!-- 關卡測驗區域 -->
@@ -1544,7 +1553,7 @@ div[id^="quizArea"] .quiz-option{
             2: { points: [], canvas: null, ctx: null },
             3: { points: [], canvas: null, ctx: null, taskMode: 'A', allowedSide: null, hintLevel: 0 },
             4: { points: [], canvas: null, ctx: null, records: [], answerConfirmed: false },
-            5: { points: [], canvas: null, ctx: null }
+            5: { points: [], canvas: null, ctx: null, movedPoints: {}, challengeComplete: false, answerConfirmed: false }
         };
 
         // 學生資訊
@@ -3570,6 +3579,10 @@ function setupCanvas(levelNum) {
                         updateLevel4MoveStatus('第四關請固定C，只移動A或B。', true);
                         return;
                     }
+                    if (levelNum === 5 && (point.label === 'A' || point.label === 'B')) {
+                        updateLevel5Status('第五關請固定A、B，只移動C、D、E。', true);
+                        return;
+                    }
                     dragging = true;
                     dragPoint = point;
                     try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
@@ -3657,6 +3670,10 @@ function setupCanvas(levelNum) {
             point.x = nextX;
             point.y = nextY;
             point.angle = angle;
+            if (levelNum === 5 && ['C', 'D', 'E'].includes(point.label)) {
+                levels[5].movedPoints = levels[5].movedPoints || {};
+                levels[5].movedPoints[point.label] = true;
+            }
 
             // 重繪並更新數值
             switch(levelNum) {
@@ -4658,49 +4675,123 @@ function setupCanvas(levelNum) {
             });
         }
 
-        function checkLevel5Progress() {
+        function updateLevel5Status(message, isWarning = false) {
+            const moveStatus = document.getElementById('level5MoveStatus');
+            if (!moveStatus) return;
+            moveStatus.textContent = message;
+            moveStatus.style.color = isWarning ? '#c92a2a' : '#495057';
+        }
+
+        function getLevel5Angles() {
             const points = levels[5].points;
+            const angles = [];
+            if (points.length < 3) return angles;
+            const [a, b] = points;
+            for (let i = 2; i < Math.min(points.length, 5); i++) {
+                const c = points[i];
+                const angleCA = Math.atan2(a.y - c.y, a.x - c.x);
+                const angleCB = Math.atan2(b.y - c.y, b.x - c.x);
+                let angleDiff = (angleCB - angleCA) * 180 / Math.PI;
+                while (angleDiff < 0) angleDiff += 360;
+                while (angleDiff > 360) angleDiff -= 360;
+                angles.push(angleDiff <= 180 ? angleDiff : 360 - angleDiff);
+            }
+            return angles;
+        }
 
-            if (points.length >= 3) {
-                const [a, b] = points;
-                const angles = [];
-
-                for (let i = 2; i < Math.min(points.length, 5); i++) {
-                    const c = points[i];
-                    const angleCA = Math.atan2(a.y - c.y, a.x - c.x);
-                    const angleCB = Math.atan2(b.y - c.y, b.x - c.x);
-                    let angleDiff = (angleCB - angleCA) * 180 / Math.PI;
-                    while (angleDiff < 0) angleDiff += 360;
-                    while (angleDiff > 360) angleDiff -= 360;
-                    let angle = angleDiff <= 180 ? angleDiff : 360 - angleDiff;
-                    angles.push(angle);
-                }
-
-                // 顯示角度
+        function checkLevel5Progress() {
+            const angles = getLevel5Angles();
+            if (angles.length) {
                 document.getElementById('angle5_1').textContent = angles[0] ? angles[0].toFixed(0) + '°' : '--°';
                 document.getElementById('angle5_2').textContent = angles[1] ? angles[1].toFixed(0) + '°' : '--°';
                 document.getElementById('angle5_3').textContent = angles[2] ? angles[2].toFixed(0) + '°' : '--°';
+            }
+            const moved = levels[5].movedPoints || {};
+            const movedCount = ['C', 'D', 'E'].filter(label => moved[label]).length;
+            const allMoved = movedCount === 3;
+            const spread = angles.length === 3 ? Math.max(...angles) - Math.min(...angles) : Infinity;
+            const equal = spread <= 1;
+            const wasComplete = levels[5].challengeComplete;
+            levels[5].challengeComplete = allMoved && equal;
 
-                if (angles.length >= 3) {
-                    earnStar(5, 1);
-                    earnStar(5, 2);
+            const moveCheck = document.getElementById('level5MoveCheck');
+            const equalCheck = document.getElementById('level5EqualCheck');
+            const challengeStatus = document.getElementById('level5ChallengeStatus');
+            if (moveCheck) moveCheck.checked = allMoved;
+            if (equalCheck) equalCheck.checked = levels[5].challengeComplete;
+            updateLevel5Status(`已移動 ${movedCount}／3 點。`);
+
+            if (allMoved) earnStar(5, 1);
+            if (levels[5].challengeComplete) {
+                earnStar(5, 2);
+                if (challengeStatus) {
+                    challengeStatus.textContent = '挑戰成功：三個圓周角已調整到一樣大。';
+                    challengeStatus.style.color = '#2b8a3e';
                 }
+                if (!wasComplete) {
+                    queueLearningEvent({
+                        level: 5,
+                        activityCode: 'L5',
+                        eventType: 'EXPLORATION_COMPLETED',
+                        eventName: '第五關三角調整一致',
+                        correct: true,
+                        rawData: { movedPoints: moved, angles: angles.map(angle => Number(angle.toFixed(1))) }
+                    });
+                }
+            } else if (challengeStatus) {
+                challengeStatus.textContent = allMoved
+                    ? `三角仍有約${Math.round(spread)}°差距，請繼續調整。`
+                    : '請先分別拖動C、D、E。';
+                challengeStatus.style.color = '#495057';
             }
         }
 
         function checkEqual5(answer) {
-            const points = levels[5].points;
-            if (points.length < 5) {
-                showFeedback(5, '請先在圓周上標記5個點（A、B、C、D、E）！', 'info');
+            if (!levels[5].challengeComplete) {
+                showFeedback(5, '請先分別拖動C、D、E，將三個圓周角調整到一樣大。', 'info');
                 return;
             }
 
             if (answer === true) {
-                showFeedback(5, '🎉 完全正確！對同一弧的所有圓周角都相等，這是圓的重要性質！你已經完全掌握了圓周角的概念！', 'success');
+                levels[5].answerConfirmed = true;
+                const conclusionCheck = document.getElementById('level5ConclusionCheck');
+                const support = document.getElementById('level5Support');
+                if (conclusionCheck) conclusionCheck.checked = true;
+                if (support) support.style.display = 'none';
+                showFeedback(5, '🎉 正確！當C、D、E位在紅色弧AB的同一側時，三個角都對著同一段弧AB，因此度數相等。', 'success');
                 earnStar(5, 3);
+                queueLearningEvent({ level: 5, activityCode: 'L5', eventType: 'CONCLUSION_SUBMITTED', eventName: '第五關同弧圓周角結論', selectedAnswer: '是', correct: true, rawData: { angles: getLevel5Angles().map(angle => Number(angle.toFixed(1))) } });
             } else {
-                showFeedback(5, '再仔細觀察一下三個角度的數值，它們真的不相等嗎？（允許有小誤差）', 'info');
+                levels[5].answerConfirmed = false;
+                const support = document.getElementById('level5Support');
+                if (support) {
+                    support.style.display = 'block';
+                    support.innerHTML = '<button class="btn btn-success" onclick="resetLevel5Learning()">📚 重新學習</button><button class="btn btn-primary" onclick="showLevel5Hint()" style="margin-left:8px;">💡 椿椿老師給我提示</button><div id="level5HintText" style="margin-top:10px;color:#495057;"></div>';
+                }
+                showFeedback(5, '判斷還需要調整。請回到成功時的位置，比較C、D、E和紅色弧AB的關係。', 'info');
+                queueLearningEvent({ level: 5, activityCode: 'L5', eventType: 'CONCLUSION_SUBMITTED', eventName: '第五關同弧圓周角結論', selectedAnswer: '否', correct: false, misconceptionCode: 'M5_SAME_ARC_CONDITION' });
             }
+        }
+
+        function showLevel5Hint() {
+            const hint = document.getElementById('level5HintText');
+            if (hint) hint.textContent = '先沿著圓周找出紅色弧AB，再看成功時C、D、E是否都位在紅色弧的另一側；接著確認三個角的兩邊是否都通過A、B。';
+            learningRecord.hintEvents.push({ level: 5, usedAt: new Date().toISOString(), hintLevel: 1, source: 'level5-same-arc' });
+            saveProgress();
+            queueLearningEvent({ level: 5, activityCode: 'L5', eventType: 'HINT_USED', eventName: '第五關同弧條件提示', hintLevel: 1, hintUsed: true });
+        }
+
+        function resetLevel5Learning() {
+            resetLevel(5);
+            window.scrollTo({ top: document.getElementById('learningArea5').offsetTop - 20, behavior: 'smooth' });
+        }
+
+        function startLevel5Quiz() {
+            if (!levels[5].challengeComplete || !levels[5].answerConfirmed) {
+                showFeedback(5, '請先完成三角調整挑戰並提出正確判斷，再進行關卡測驗。', 'info');
+                return;
+            }
+            startLevelQuiz(5);
         }
 
         // ===== 輔助函數 =====
@@ -4990,6 +5081,18 @@ function setupCanvas(levelNum) {
                 renderLevel4Records();
                 updateLevel4MoveStatus('目前只能移動A或B。');
             } else if (levelNum === 5) {
+                levels[levelNum].movedPoints = {};
+                levels[levelNum].challengeComplete = false;
+                levels[levelNum].answerConfirmed = false;
+                ['level5MoveCheck', 'level5EqualCheck', 'level5ConclusionCheck'].forEach(id => {
+                    const checkbox = document.getElementById(id);
+                    if (checkbox) checkbox.checked = false;
+                });
+                const support = document.getElementById('level5Support');
+                if (support) {
+                    support.style.display = 'none';
+                    support.innerHTML = '';
+                }
                 // 第五關：自動添加五個點 A、B、C、D、E
                 const angle1 = 0; // 0度
                 const angle2 = Math.PI * 2 / 3; // 120度
@@ -5021,12 +5124,13 @@ function setupCanvas(levelNum) {
                         label: 'D'
                     },
                     {
-                        x: centerX + radius * Math.cos(baseAngle + step * 2),
-                        y: centerY + radius * Math.sin(baseAngle + step * 2),
-                        angle: baseAngle + step * 2,
+                        x: centerX + radius * Math.cos(Math.PI / 3),
+                        y: centerY + radius * Math.sin(Math.PI / 3),
+                        angle: Math.PI / 3,
                         label: 'E'
                     }
                 ];
+                updateLevel5Status('已移動 0／3 點。');
             }
             
             // 重置顯示
