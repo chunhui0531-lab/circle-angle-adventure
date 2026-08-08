@@ -1575,7 +1575,7 @@ div[id^="quizArea"] .quiz-option{
         const levels = {
             1: { points: [], canvas: null, ctx: null },
             2: { points: [], canvas: null, ctx: null },
-            3: { points: [], canvas: null, ctx: null, taskMode: 'A', allowedSide: null, hintLevel: 0 },
+            3: { points: [], canvas: null, ctx: null, taskMode: 'A', allowedSide: null, hintLevel: 0, taskARecords: [], taskBRecords: [] },
             4: { points: [], canvas: null, ctx: null, records: [], answerConfirmed: false },
             5: { points: [], canvas: null, ctx: null, movedPoints: {}, challengeComplete: false, answerConfirmed: false }
         };
@@ -3767,10 +3767,15 @@ function setupCanvas(levelNum) {
 
             let dragging = false;
             let dragPoint = null;
+            let dragStartMeasures = null;
 
-            const stopDrag = () => {
+            const stopDrag = (recordOperation = false) => {
+                if (recordOperation && dragging && levelNum === 3 && dragPoint) {
+                    recordLevel3Drag(dragPoint.label, dragStartMeasures);
+                }
                 dragging = false;
                 dragPoint = null;
+                dragStartMeasures = null;
             };
 
             canvas.addEventListener('pointerdown', (e) => {
@@ -3793,6 +3798,7 @@ function setupCanvas(levelNum) {
                     }
                     dragging = true;
                     dragPoint = point;
+                    if (levelNum === 3) dragStartMeasures = getLevel3Measures();
                     try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
                     return;
                 }
@@ -3805,10 +3811,10 @@ function setupCanvas(levelNum) {
                 handleDrag(e, levelNum, dragPoint);
             }, { passive: false });
 
-            canvas.addEventListener('pointerup', stopDrag, { passive: true });
-            canvas.addEventListener('pointercancel', stopDrag, { passive: true });
+            canvas.addEventListener('pointerup', () => stopDrag(true), { passive: true });
+            canvas.addEventListener('pointercancel', () => stopDrag(false), { passive: true });
             canvas.addEventListener('pointerleave', (e) => {
-                if (e.buttons === 0) stopDrag();
+                if (e.buttons === 0) stopDrag(true);
             }, { passive: true });
         }
 
@@ -4262,6 +4268,65 @@ function setupCanvas(levelNum) {
         }
 
         // ===== Level 3: 圓周角探秘 =====
+        function getLevel3Measures() {
+            const points = levels[3].points;
+            if (points.length !== 3) return null;
+            const [a, b, c] = points;
+            const angleCA = Math.atan2(a.y - c.y, a.x - c.x);
+            const angleCB = Math.atan2(b.y - c.y, b.x - c.x);
+            let diff = (angleCB - angleCA) * 180 / Math.PI;
+            while (diff < 0) diff += 360;
+            while (diff > 360) diff -= 360;
+            const inscribedAngle = diff <= 180 ? diff : 360 - diff;
+            return {
+                arcDegrees: Number((inscribedAngle * 2).toFixed(1)),
+                inscribedAngle: Number(inscribedAngle.toFixed(1)),
+                pointAngles: {
+                    A: Number((a.angle * 180 / Math.PI).toFixed(1)),
+                    B: Number((b.angle * 180 / Math.PI).toFixed(1)),
+                    C: Number((c.angle * 180 / Math.PI).toFixed(1))
+                }
+            };
+        }
+
+        function recordLevel3Drag(movedPoint, before) {
+            const after = getLevel3Measures();
+            if (!before || !after) return;
+            const pointChange = Math.abs((after.pointAngles[movedPoint] || 0) - (before.pointAngles[movedPoint] || 0));
+            const arcChange = Number((after.arcDegrees - before.arcDegrees).toFixed(1));
+            const angleChange = Number((after.inscribedAngle - before.inscribedAngle).toFixed(1));
+            if (pointChange < 0.5 && Math.abs(arcChange) < 0.5 && Math.abs(angleChange) < 0.5) return;
+
+            const mode = levels[3].taskMode === 'B' ? 'B' : 'A';
+            const records = mode === 'A' ? levels[3].taskARecords : levels[3].taskBRecords;
+            records.push({ movedPoint, before, after, arcChange, angleChange });
+            saveProgress();
+            queueLearningEvent({
+                level: 3,
+                activityCode: mode === 'A' ? 'L3A' : 'L3B',
+                eventType: 'EXPLORATION_RECORDED',
+                eventName: `第三關任務${mode}角度觀察紀錄`,
+                conceptCode: mode === 'A' ? 'C7_ARC_ANGLE_CHANGE' : 'C8_SAME_ARC',
+                value1Name: 'arcABDegrees',
+                value1: after.arcDegrees,
+                value2Name: 'inscribedAngleDegrees',
+                value2: after.inscribedAngle,
+                rawData: {
+                    taskMode: mode,
+                    recordNumber: records.length,
+                    movedPoint,
+                    beforeArcDegrees: before.arcDegrees,
+                    beforeInscribedAngle: before.inscribedAngle,
+                    afterArcDegrees: after.arcDegrees,
+                    afterInscribedAngle: after.inscribedAngle,
+                    arcChange,
+                    angleChange,
+                    fixedPoints: mode === 'A' ? ['C'] : ['A', 'B'],
+                    pointAngles: after.pointAngles
+                }
+            });
+        }
+
         function drawLevel3() {
             const ctx = levels[3].ctx;
             const canvas = levels[3].canvas;
