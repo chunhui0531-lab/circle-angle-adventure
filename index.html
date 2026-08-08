@@ -534,6 +534,29 @@
 .right-bottom .feedback{width: 100%;}
 .right-bottom .btn-group{width: 100%; justify-content: center;}
 
+/* 平滑的數學弧符號，避免字型內建符號呈現尖折線。 */
+.arc-notation{
+  position:relative;
+  display:inline-block;
+  padding-top:.24em;
+  margin:0 .08em;
+  line-height:1;
+  white-space:nowrap;
+}
+.arc-notation::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:.02em;
+  width:112%;
+  height:.48em;
+  border:2px solid transparent;
+  border-top-color:currentColor;
+  border-radius:50%;
+  transform:translateX(-50%);
+  box-sizing:border-box;
+}
+
 @media (max-width: 980px){
   .learning-split{grid-template-columns: 1fr;}
   .learning-left canvas{max-width: 100%;}
@@ -929,8 +952,9 @@ div[id^="quizArea"] .quiz-option{
 </div>
 <div class="entry-choice-grid">
 <button class="entry-choice" type="button" onclick="chooseEntryMode('pretest')"><div style="font-size:3rem;">📝</div><h3>進行課前前測</h3><p>完成前測後即可關閉網頁並交回平板。</p></button>
-<button class="entry-choice" type="button" onclick="chooseEntryMode('lesson1')"><div style="font-size:3rem;">🏰</div><h3>進入第一節探索</h3><p>依序完成第一關至第三關。</p></button>
-<button class="entry-choice" type="button" onclick="chooseEntryMode('lesson2')"><div style="font-size:3rem;">🔍</div><h3>進入第二節探索</h3><p>直接從第四關開始，不必重做前三關。</p></button>
+<button class="entry-choice" type="button" onclick="chooseEntryMode('lesson1')"><div style="font-size:3rem;">🏰</div><h3>進入基礎概念探索</h3><p>依序完成第一關至第三關。</p></button>
+<button class="entry-choice" type="button" onclick="chooseEntryMode('lesson2')"><div style="font-size:3rem;">🔍</div><h3>進入角度關係挑戰</h3><p>直接從第四關開始，不必重做前三關。</p></button>
+<button class="entry-choice" type="button" onclick="chooseEntryMode('posttest')"><div style="font-size:3rem;">🎓</div><h3>完成學習後測</h3><p>直接進入後測B卷，不必重做前五關。</p></button>
 </div>
 </div>
 </div>
@@ -1465,9 +1489,9 @@ div[id^="quizArea"] .quiz-option{
 </div>
 <!-- Level 6: 能力測驗 -->
 <div class="level-content hidden" id="level6">
-<h2 class="level-title">能力測驗：角度守護者認證</h2>
+<h2 class="level-title">後測B卷：角度守護者認證</h2>
 <div class="level-description">
-                    恭喜你完成所有關卡！現在讓我們測試你是否真正掌握了圓周角的知識。<br/>
+                    恭喜你完成五個學習關卡！請運用網站探索與課本第112～121頁所學完成後測。<br/>
 <strong>通過測驗後，你將獲得「角度守護者」認證證書！</strong>
 </div>
 <div class="learning-split">
@@ -1484,20 +1508,20 @@ div[id^="quizArea"] .quiz-option{
 <div class="learning-right">
 <div class="instruction-box">
 <h4>📝 測驗規則</h4>
-<p>• 共有5題選擇題，每題從對應關卡的題庫中<strong>隨機抽取</strong><br/>
-                    • 每次測驗的題目都不相同，請認真作答<br/>
-                    • 答對4題以上即可通過測驗<br/>
+<p>• 後測B卷共有10題，所有學生使用相同的等值題目<br/>
+                    • 作答中只顯示完成題數，不顯示正誤或分數<br/>
+                    • 第一次提交作為正式後測紀錄，答對8題以上即可通過認證<br/>
                     • 如果未通過，系統會告訴你需要回去複習哪些關卡<br/>
-                    • 可以多次測驗，直到通過為止（但題目會重新隨機抽選）</p>
+                    • 未通過時可以完成補救後重測；重測不會覆蓋第一次正式紀錄</p>
 </div>
 <div class="info-panel">
 <div class="info-card ratio">
 <h3>已作答</h3>
-<div class="value" id="finalAnswered">0/5</div>
+<div class="value" id="finalAnswered">0/10</div>
 </div>
 <div class="info-card central">
 <h3>目前答對</h3>
-<div class="value" id="finalScore">0</div>
+<div class="value" id="finalScore">—</div>
 </div>
 </div>
 </div>
@@ -1605,7 +1629,7 @@ div[id^="quizArea"] .quiz-option{
         // ===== Google試算表後台同步 =====
         const LEARNING_BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxqrJM3w3Uuj2vFzdZV2OHG2GLTyi0chXemuKHaen7ptUNUtHidZvo0Zdz_57O09602/exec';
         const LEARNING_BACKEND_KEY = 'CIRCLE_ANGLE_2026_V1';
-        const LEARNING_APP_VERSION = '2026.08.04-split-entry2';
+        const LEARNING_APP_VERSION = '2026.08.06-posttest-b1';
         let syncInProgress = false;
         let syncTimer = null;
 
@@ -1767,6 +1791,46 @@ div[id^="quizArea"] .quiz-option{
             }
         }
 
+        let posttestSyncInProgress = false;
+        function getPosttestCompletionKey(){ return `circleAnglePosttestCompleted:v1:${studentInfo.anonymousId || 'unknown'}`; }
+        function getPosttestQueueKey(){ return `circleAnglePosttestQueue:${studentInfo.anonymousId || 'unknown'}`; }
+        function readPosttestQueue(){
+            try { const value=JSON.parse(localStorage.getItem(getPosttestQueueKey()) || '[]'); return Array.isArray(value) ? value : []; }
+            catch(error){ console.warn('無法讀取後測待傳資料。', error); return []; }
+        }
+        function writePosttestQueue(queue){ localStorage.setItem(getPosttestQueueKey(), JSON.stringify(queue)); }
+        function hasCompletedFormalPosttest(){
+            try { const saved=JSON.parse(localStorage.getItem(getPosttestCompletionKey()) || 'null'); return Boolean(saved && saved.submissionId && saved.completedAt); }
+            catch(error){ return false; }
+        }
+        async function saveFormalPosttest(){
+            if (hasCompletedFormalPosttest()) return { formal:false, synced:readPosttestQueue().length===0 };
+            const submission={
+                submissionId:createRecordId('posttest'), anonymousId:studentInfo.anonymousId,
+                classCode:studentInfo.class, seatNumber:Number(studentInfo.number), activityCode:'POST_B',
+                clientSubmittedAt:new Date().toISOString(),
+                answers:POSTTEST_B_ITEMS.map((item,index)=>({ questionId:item.questionId, selectedIndex:Number(userAnswers[index]), selectedAnswer:item.options[userAnswers[index]] }))
+            };
+            writePosttestQueue([...readPosttestQueue(), submission]);
+            localStorage.setItem(getPosttestCompletionKey(), JSON.stringify({submissionId:submission.submissionId,completedAt:submission.clientSubmittedAt}));
+            return { formal:true, synced:await flushPosttestQueue() };
+        }
+        async function flushPosttestQueue(){
+            if (posttestSyncInProgress || !navigator.onLine) return false;
+            const queue=readPosttestQueue(); if (!queue.length) return true;
+            posttestSyncInProgress=true;
+            try {
+                const submission=queue[0];
+                const response=await fetch(LEARNING_BACKEND_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'SYNC_POSTTEST',deploymentKey:LEARNING_BACKEND_KEY,submission})});
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const result=await response.json(); if (!result.ok) throw new Error(result.message || '後測後台拒絕接收。');
+                writePosttestQueue(readPosttestQueue().filter(item=>item.submissionId!==submission.submissionId));
+                if (readPosttestQueue().length) setTimeout(()=>flushPosttestQueue(),100);
+                return true;
+            } catch(error){ console.warn('後測同步失敗，資料保留等待補傳。',error); return false; }
+            finally { posttestSyncInProgress=false; }
+        }
+
         function getSyncQueueKey() {
             return `circleAngleSyncQueue:${studentInfo.anonymousId || 'unknown'}`;
         }
@@ -1926,6 +1990,7 @@ div[id^="quizArea"] .quiz-option{
 
         window.addEventListener('online', () => {
             flushPretestQueue();
+            flushPosttestQueue();
             flushLearningEventQueue();
         });
 
@@ -2242,6 +2307,28 @@ div[id^="quizArea"] .quiz-option{
         function _svgLine(p1, p2, color, w){
             return `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${color||'#0f172a'}" stroke-width="${w||3}" />`;
         }
+        function _svgAngleArcLabel(vertex, p1, p2, label, color){
+            const radius = 28;
+            const unit = p => {
+                const dx = p.x - vertex.x, dy = p.y - vertex.y;
+                const length = Math.hypot(dx, dy) || 1;
+                return {x:dx/length, y:dy/length};
+            };
+            let u1 = unit(p1), u2 = unit(p2);
+            let a1 = Math.atan2(u1.y, u1.x);
+            let a2 = Math.atan2(u2.y, u2.x);
+            let diff = ((a2-a1)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);
+            if(diff>Math.PI){ [u1,u2]=[u2,u1]; diff=Math.PI*2-diff; }
+            const start={x:vertex.x+u1.x*radius,y:vertex.y+u1.y*radius};
+            const end={x:vertex.x+u2.x*radius,y:vertex.y+u2.y*radius};
+            const bx=u1.x+u2.x, by=u1.y+u2.y;
+            const bl=Math.hypot(bx,by)||1;
+            const textDistance=15;
+            const tx=vertex.x+(bx/bl)*textDistance;
+            const ty=vertex.y+(by/bl)*textDistance+5;
+            return `<path d="M ${start.x} ${start.y} A ${radius} ${radius} 0 0 1 ${end.x} ${end.y}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round"/>`+
+                `<text x="${tx}" y="${ty}" text-anchor="middle" font-size="15" font-weight="700" fill="${color}">${label}</text>`;
+        }
         function _svgArcHighlight(cx, cy, r, a1, a2, color){
             // 以短弧為主（若跨越 180°，改畫另一方向）
             let start = a1, end = a2;
@@ -2260,6 +2347,81 @@ div[id^="quizArea"] .quiz-option{
         function _wrapSvg(inner){
             return `<svg viewBox="0 0 300 300" role="img" focusable="false">${inner}</svg>`;
         }
+
+        // --- 後測B卷：固定圖形與等值題（對應前測A卷10個目標） ---
+        function buildPosttestFigures(){
+            const base = () => _svgCircleScene({grid:false});
+            const point = (cx, cy, r, deg, label, color) => {
+                const p = _ptOnCircle(cx, cy, r, deg);
+                return { p, svg: _svgPoint(p, label, color) };
+            };
+            const figures = {};
+            {
+                const {cx,cy,r,elements}=base(); const C=point(cx,cy,r,205,'C','#2563eb'); const D=point(cx,cy,r,335,'D','#dc2626');
+                elements.push(_svgArcHighlight(cx,cy,r,205,335,'#f59e0b'),C.svg,D.svg);
+                figures.q1=_wrapSvg(elements.join(''));
+            }
+            {
+                const {cx,cy,r,elements}=base(); const A=point(cx,cy,r,225,'A','#2563eb'); const B=point(cx,cy,r,300,'B','#dc2626'); const O={x:cx,y:cy};
+                elements.push(_svgArcHighlight(cx,cy,r,225,300,'#f59e0b'),_svgLine(O,A.p,'#2563eb',3),_svgLine(O,B.p,'#2563eb',3),_svgPoint(O,'O','#111827'),A.svg,B.svg,`<text x="150" y="172" text-anchor="middle" font-size="20" font-weight="700">75°</text>`);
+                figures.q2=_wrapSvg(elements.join(''));
+            }
+            {
+                const {cx,cy,r,elements}=base(); const A=point(cx,cy,r,205,'A','#2563eb'); const B=point(cx,cy,r,335,'B','#dc2626'); const C=point(cx,cy,r,80,'C','#16a34a'); const O={x:cx,y:cy};
+                elements.push(_svgLine(O,A.p,'#64748b',3),_svgLine(O,B.p,'#64748b',3),_svgLine(C.p,A.p,'#16a34a',3),_svgLine(C.p,B.p,'#16a34a',3),_svgPoint(O,'O','#111827'),A.svg,B.svg,C.svg);
+                figures.q3=_wrapSvg(elements.join(''));
+            }
+            {
+                const {cx,cy,r,elements}=base(); const D=point(cx,cy,r,215,'D','#2563eb'); const E=point(cx,cy,r,325,'E','#dc2626'); const A=point(cx,cy,r,75,'A','#16a34a'); const B=point(cx,cy,r,125,'B','#7c3aed');
+                elements.push(_svgArcHighlight(cx,cy,r,215,325,'#f59e0b'),_svgLine(A.p,D.p,'#16a34a',3),_svgLine(A.p,E.p,'#16a34a',3),_svgLine(B.p,D.p,'#7c3aed',3),_svgLine(B.p,E.p,'#7c3aed',3),D.svg,E.svg,A.svg,B.svg);
+                figures.q4=_wrapSvg(elements.join(''));
+            }
+            {
+                const {cx,cy,r,elements}=base(); const A=point(cx,cy,r,205,'A','#2563eb'); const B=point(cx,cy,r,335,'B','#dc2626'); const C=point(cx,cy,r,75,'C','#16a34a'); const O={x:cx,y:cy};
+                elements.push(_svgArcHighlight(cx,cy,r,205,335,'#f59e0b'),_svgLine(O,A.p,'#2563eb',3),_svgLine(O,B.p,'#2563eb',3),_svgLine(C.p,A.p,'#16a34a',3),_svgLine(C.p,B.p,'#16a34a',3),_svgPoint(O,'O','#111827'),A.svg,B.svg,C.svg,`<text x="150" y="175" text-anchor="middle" font-size="19" font-weight="700">130°</text>`);
+                figures.q5=_wrapSvg(elements.join(''));
+            }
+            {
+                const {cx,cy,r,elements}=base(); const A=point(cx,cy,r,210,'A','#2563eb'); const B=point(cx,cy,r,330,'B','#dc2626'); const C=point(cx,cy,r,65,'C','#16a34a'); const D=point(cx,cy,r,120,'D','#7c3aed');
+                elements.push(_svgArcHighlight(cx,cy,r,210,330,'#f59e0b'),_svgLine(C.p,A.p,'#16a34a',3),_svgLine(C.p,B.p,'#16a34a',3),_svgLine(D.p,A.p,'#7c3aed',3),_svgLine(D.p,B.p,'#7c3aed',3),_svgAngleArcLabel(C.p,A.p,B.p,'52°','#16a34a'),A.svg,B.svg,C.svg,D.svg);
+                figures.q6=_wrapSvg(elements.join(''));
+            }
+            {
+                const {cx,cy,r,elements}=base(); const A=point(cx,cy,r,225,'A','#2563eb'); const B=point(cx,cy,r,285,'B','#dc2626'); const C=point(cx,cy,r,80,'C','#16a34a');
+                elements.push(_svgArcHighlight(cx,cy,r,225,285,'#f59e0b'),_svgLine(C.p,A.p,'#16a34a',3),_svgLine(C.p,B.p,'#16a34a',3),A.svg,B.svg,C.svg,`<text x="150" y="289" text-anchor="middle" font-size="13" font-weight="700">弧長＝圓周長的 1/6</text>`);
+                figures.q7=_wrapSvg(elements.join(''));
+            }
+            {
+                const {cx,cy,r,elements}=base(); const A=point(cx,cy,r,220,'A','#2563eb'); const B=point(cx,cy,r,296,'B','#dc2626'); const C=point(cx,cy,r,80,'C','#16a34a');
+                elements.push(_svgArcHighlight(cx,cy,r,220,296,'#f59e0b'),_svgLine(C.p,A.p,'#16a34a',3),_svgLine(C.p,B.p,'#16a34a',3),_svgAngleArcLabel(C.p,A.p,B.p,'38°','#16a34a'),A.svg,B.svg,C.svg);
+                figures.q8=_wrapSvg(elements.join(''));
+            }
+            {
+                const {cx,cy,r,elements}=base(); const A=point(cx,cy,r,180,'A','#2563eb'); const B=point(cx,cy,r,0,'B','#dc2626'); const C=point(cx,cy,r,90,'C','#16a34a'); const O={x:cx,y:cy};
+                elements.push(_svgLine(A.p,B.p,'#2563eb',4),_svgLine(C.p,A.p,'#16a34a',3),_svgLine(C.p,B.p,'#16a34a',3),_svgPoint(O,'O','#111827'),A.svg,B.svg,C.svg,`<text x="150" y="177" text-anchor="middle" font-size="16">AB為直徑</text>`);
+                figures.q9=_wrapSvg(elements.join(''));
+            }
+            {
+                const {cx,cy,r,elements}=base(); const A=point(cx,cy,r,210,'A','#2563eb'); const B=point(cx,cy,r,330,'B','#dc2626'); const C=point(cx,cy,r,55,'C','#16a34a'); const D=point(cx,cy,r,90,'D','#7c3aed'); const E=point(cx,cy,r,130,'E','#ea580c');
+                elements.push(_svgArcHighlight(cx,cy,r,210,330,'#f59e0b'),_svgLine(C.p,A.p,'#16a34a',2),_svgLine(C.p,B.p,'#16a34a',2),_svgLine(D.p,A.p,'#7c3aed',2),_svgLine(D.p,B.p,'#7c3aed',2),_svgLine(E.p,A.p,'#ea580c',2),_svgLine(E.p,B.p,'#ea580c',2),A.svg,B.svg,C.svg,D.svg,E.svg);
+                figures.q10=_wrapSvg(elements.join(''));
+            }
+            return figures;
+        }
+
+        const POSTTEST_FIGURES = buildPosttestFigures();
+        const POSTTEST_B_ITEMS = [
+            { questionId:'POST-B-Q01', questionVersion:1, level:1, conceptCode:'C1_ARC_DEF', misconceptionCode:'M1_ARC', question:'圖中橘色部分位於圓周上C、D兩點之間。這個部分稱為什麼？', figure:POSTTEST_FIGURES.q1, options:['弦CD','弧CD','半徑OC','圓心角∠COD','我不確定'], answer:1, explanation:'圓周上兩點之間的曲線稱為弧。' },
+            { questionId:'POST-B-Q02', questionVersion:2, level:2, conceptCode:'C5_CENTRAL_ARC', misconceptionCode:'M2_CENTRAL_ARC', question:'圖中∠AOB＝75°，弧AB為幾度？', figure:POSTTEST_FIGURES.q2, options:['75°','37.5°','150°','285°','我不確定'], answer:0, explanation:'弧的度數等於所對圓心角的度數，所以弧AB為75°。' },
+            { questionId:'POST-B-Q03', questionVersion:2, level:3, conceptCode:'C6_INSCRIBED_DEF', misconceptionCode:'M3_INSCRIBED_DEFINITION', question:'圖中A、B、C點皆在圓O上，下列何者是圓周角？', figure:POSTTEST_FIGURES.q3, options:['∠AOB','∠ACB','∠OAC','∠ABO','我不確定'], answer:1, explanation:'∠ACB的頂點C在圓上，CA、CB都是弦。' },
+            { questionId:'POST-B-Q04', questionVersion:2, level:3, conceptCode:'C6_INSCRIBED_DEF', misconceptionCode:'M4_SUBTENDED_ARC', question:'觀察圖形，下列哪兩個角所對的弧相同？', figure:POSTTEST_FIGURES.q4, options:['∠DAE與∠DBE','∠ADE與∠BED','∠ADB與∠AEB','∠DAB與∠DBA','我不確定'], answer:0, explanation:'判斷所對弧時要沿角的兩邊找到圓上的兩個端點；兩角的端點都是D、E。' },
+            { questionId:'POST-B-Q05', questionVersion:2, level:4, conceptCode:'C9_RATIO_GUESS', misconceptionCode:'M5_RATIO', question:'圖中∠AOB＝130°，∠ACB為幾度？', figure:POSTTEST_FIGURES.q5, options:['260°','130°','65°','32.5°','我不確定'], answer:2, explanation:'圓周角的度數等於所對弧度數的一半，所以130°÷2＝65°。' },
+            { questionId:'POST-B-Q06', questionVersion:2, level:5, conceptCode:'C8_SAME_ARC', misconceptionCode:'M6_SAME_ARC', question:'圖中∠ACB＝52°，∠ADB為幾度？', figure:POSTTEST_FIGURES.q6, options:['26°','52°','104°','無法判斷','我不確定'], answer:1, explanation:'同弧所對的圓周角度數相等，所以∠ADB＝52°。' },
+            { questionId:'POST-B-Q07', questionVersion:1, level:4, conceptCode:'C9_RATIO_GUESS', misconceptionCode:'M7_ARC_FRACTION', question:'橘色弧AB的長是圓周長的1/6，∠ACB是弧AB所對的圓周角。∠ACB是多少度？', figure:POSTTEST_FIGURES.q7, options:['30°','60°','90°','120°','我不確定'], answer:0, explanation:'弧AB為360°×1/6＝60°，圓周角為60°÷2＝30°。' },
+            { questionId:'POST-B-Q08', questionVersion:2, level:4, conceptCode:'C9_RATIO_GUESS', misconceptionCode:'M5_RATIO_REVERSE', question:'圖中∠ACB＝38°，弧AB為幾度？', figure:POSTTEST_FIGURES.q8, options:['19°','38°','76°','152°','我不確定'], answer:2, explanation:'所對弧度數是圓周角的2倍，所以弧AB為38°×2＝76°。' },
+            { questionId:'POST-B-Q09', questionVersion:1, level:5, conceptCode:'EXT_DIAMETER_RIGHT_ANGLE', misconceptionCode:'M7_DIAMETER_RIGHT_ANGLE', question:'圖中AB通過圓心O，是一條直徑。∠ACB是多少度？', figure:POSTTEST_FIGURES.q9, options:['45°','60°','180°','90°','我不確定'], answer:3, explanation:'直徑所對的是180°的半圓弧，所對圓周角為180°÷2＝90°。' },
+            { questionId:'POST-B-Q10', questionVersion:2, level:5, conceptCode:'C8_SAME_ARC', misconceptionCode:'M6_SAME_ARC', question:'觀察圖形，∠ACB、∠ADB、∠AEB的大小關係為何？', figure:POSTTEST_FIGURES.q10, options:['三個角一樣大','越靠近A的角越大','越靠近B的角越大','每個位置都沒有規律','我不確定'], answer:0, explanation:'同弧所對的圓周角度數相等。' }
+        ];
 
         // --- 圖形題工廠：圓心角/圓周角/直徑定理/同弧圓周角 ---
         function Q_inscribed_half_of_central(){
@@ -2446,7 +2608,7 @@ div[id^="quizArea"] .quiz-option{
                 { question: "老師畫一個圓：若 ∠AOB = 80°、∠ACB = 35°，兩角是否可能對同一弧 AB？", options: ["可能", "不可能", "一定可能", "一定不可能"], answer: 1 },
                 { question: "若弧 AB 的度數為 150°，則任一對同弧 AB 的圓周角為：", options: ["75°", "150°", "300°", "無法判斷"], answer: 0 },
                 { question: "若弧 AB 是半圓弧，則任一對弧 AB 的圓周角為：", options: ["45°", "60°", "90°", "120°"], answer: 2 },
-                { question: "下列何者是常見迷思？", options: ["圓周角一定等於圓心角", "同弧圓周角相等", "圓心角度數等於所對弧度數", "直徑所對圓周角為直角"], answer: 0 }
+                { question: "下列敘述何者錯誤？", options: ["圓周角一定等於圓心角", "同弧圓周角相等", "圓心角度數等於所對弧度數", "直徑所對圓周角為直角"], answer: 0 }
             ]
         };
 
@@ -2583,7 +2745,7 @@ div[id^="quizArea"] .quiz-option{
                     question: "當圓周上兩點A和B相距最遠時（直徑的兩端），它們之間的弧稱為？",
                     options: ["小弧", "大弧", "半圓弧", "完整圓"],
                     answer: 2,
-                    explanation: "當兩點在直徑的兩端時，形成的弧是半圓弧，這是最大的弧。"
+                    explanation: "當兩點在直徑的兩端時，兩點分出的兩段弧各為半圓弧。"
                 },
                 {
                     question: "圓周上有兩點A和B，它們之間會形成幾段弧？",
@@ -2632,7 +2794,7 @@ div[id^="quizArea"] .quiz-option{
             ],
             level3: [ // 第三關：圓周角探秘
                 {
-                    question: "如果圓周上有三個點A、B、C，其中∠ACB和∠ADB都對著同一段弧AB，那麼這兩個圓周角的關係是？",
+                    question: "如果圓周上有A、B、C、D四個點，其中∠ACB和∠ADB都對著同一段弧AB，那麼這兩個圓周角的關係是？",
                     options: ["∠ACB > ∠ADB", "∠ACB < ∠ADB", "∠ACB = ∠ADB", "無法確定"],
                     answer: 2,
                     explanation: "同弧所對的圓周角相等！這是圓周角的重要性質。建議回第三關複習。"
@@ -2710,8 +2872,8 @@ div[id^="quizArea"] .quiz-option{
                 {
                     question: "在同一個圓中，如果圓心角∠AOB = 90°，圓周角∠ACB = 45°，弦AB會是什麼？",
                     options: ["普通的弦", "半徑", "直徑", "無法確定"],
-                    answer: 2,
-                    explanation: "當圓心角=90°時，如果對應的圓周角=45°（正好是一半），說明它們對著同一弧。而90°的圓心角對應的弦經過圓心，就是直徑。"
+                    answer: 0,
+                    explanation: "90°圓心角所對的弦不會通過圓心，因此AB是一般的弦；圓心角為180°時，所對的弦才是直徑。"
                 },
                 {
                     question: "老師在黑板上畫了一個圓，標記了點A、B、C、O（圓心）。如果∠AOB = 80°，∠ACB = 35°，這兩個角對著同一段弧嗎？",
@@ -2721,7 +2883,7 @@ div[id^="quizArea"] .quiz-option{
                 },
                 {
                     question: "下列關於圓的角度的敘述，何者錯誤？",
-                    options: ["圓心角的頂點在圓心", "同弧的圓周角都相等", "圓心角等於圓周角的2倍", "弧的度數等於圓周角的度數"],
+                    options: ["圓心角的頂點在圓心", "同弧的圓周角都相等", "對同一弧時，圓心角等於圓周角的2倍", "弧的度數等於圓周角的度數"],
                     answer: 3,
                     explanation: "弧的度數等於「圓心角」的度數，不是圓周角。圓周角是弧度數的一半。"
                 }
@@ -2798,13 +2960,14 @@ div[id^="quizArea"] .quiz-option{
         }
 
         function chooseEntryMode(mode) {
-            selectedEntryMode = ['pretest', 'lesson1', 'lesson2'].includes(mode) ? mode : 'lesson1';
+            selectedEntryMode = ['pretest', 'lesson1', 'lesson2', 'posttest'].includes(mode) ? mode : 'lesson1';
             document.getElementById('entryHomePage').classList.add('hidden');
             document.getElementById('loginPage').classList.remove('hidden');
             const entryLabels = {
                 pretest: ['📝 登入課前前測', '請重新選擇班級代碼並輸入座號，完成後即可交回平板。', '開始前測'],
-                lesson1: ['🏰 登入第一節探索', '請重新選擇班級代碼並輸入座號，依序完成第一至第三關。', '開始第一節探索'],
-                lesson2: ['🔍 登入第二節探索', '請重新選擇班級代碼並輸入座號，登入後直接從第四關開始。', '開始第二節探索']
+                lesson1: ['🏰 登入基礎概念探索', '請重新選擇班級代碼並輸入座號，依序完成第一至第三關。', '開始基礎概念探索'],
+                lesson2: ['🔍 登入角度關係挑戰', '請重新選擇班級代碼並輸入座號，登入後直接從第四關開始。', '開始角度關係挑戰'],
+                posttest: ['🎓 登入學習後測', '請重新選擇班級代碼並輸入座號，登入後直接完成後測B卷。', '開始學習後測']
             };
             const [title, description, buttonText] = entryLabels[selectedEntryMode];
             document.getElementById('loginModeTitle').textContent = title;
@@ -2865,6 +3028,8 @@ div[id^="quizArea"] .quiz-option{
                 } else {
                     showPretest();
                 }
+            } else if (selectedEntryMode === 'posttest') {
+                beginPosttest();
             } else if (selectedEntryMode === 'lesson2') {
                 beginSecondLesson();
             } else {
@@ -2878,7 +3043,7 @@ div[id^="quizArea"] .quiz-option{
                 level: 1,
                 activityCode: 'L1',
                 eventType: 'SESSION_STARTED',
-                eventName: '第一節課開始',
+                eventName: '基礎概念探索開始',
                 rawData: { sessionMode: studentInfo.sessionMode, consentAcknowledged: true }
             });
             flushLearningEventQueue();
@@ -2895,7 +3060,22 @@ div[id^="quizArea"] .quiz-option{
                 level: 4,
                 activityCode: 'L4',
                 eventType: 'SESSION_STARTED',
-                eventName: '第二節課開始',
+                eventName: '角度關係挑戰開始',
+                rawData: { sessionMode: studentInfo.sessionMode, consentAcknowledged: true }
+            });
+            flushLearningEventQueue();
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('storyPage').classList.add('hidden');
+            enterKingdom();
+        }
+
+        function beginPosttest() {
+            document.getElementById('pretestPage').classList.add('hidden');
+            queueLearningEvent({
+                level: 6,
+                activityCode: 'POST_B',
+                eventType: 'SESSION_STARTED',
+                eventName: '學習後測開始',
                 rawData: { sessionMode: studentInfo.sessionMode, consentAcknowledged: true }
             });
             flushLearningEventQueue();
@@ -2907,6 +3087,7 @@ div[id^="quizArea"] .quiz-option{
         // 進入王國
         
         function quickStartTeacherMode() {
+            const teacherEntryMode = selectedEntryMode;
             // 教師模式資料使用獨立代碼，不與正式學生紀錄混合
             studentInfo.class = 'T';
             studentInfo.number = '00';
@@ -2925,10 +3106,12 @@ div[id^="quizArea"] .quiz-option{
             document.getElementById('storyPage').classList.add('hidden');
 
             enterKingdom();
-            // 直接開啟第一關學習區（包含重置狀態）
-            nextLevel(1);
-            showLevelContent(1);
-            resetLevel(1);
+            const targetLevel = teacherEntryMode === 'posttest' ? 6 : (teacherEntryMode === 'lesson2' ? 4 : 1);
+            nextLevel(targetLevel);
+            if (targetLevel <= 5) {
+                showLevelContent(targetLevel);
+                resetLevel(targetLevel);
+            }
 
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -2938,34 +3121,35 @@ function enterKingdom() {
             document.getElementById('progressBar').classList.remove('hidden');
             const isLessonOne = studentInfo.sessionMode === 'lesson1';
             const isLessonTwo = studentInfo.sessionMode === 'lesson2';
-            const isStructuredLesson = isLessonOne || isLessonTwo;
+            const isPosttest = studentInfo.sessionMode === 'posttest';
+            const isStructuredLesson = isLessonOne || isLessonTwo || isPosttest;
             
             // 顯示進度條
             const progressBar = document.getElementById('progressBar');
             progressBar.innerHTML = `
-                <div class="level-indicator active${isLessonTwo ? ' lesson-locked' : ''}" data-level="1" aria-disabled="${isLessonTwo}">
+                <div class="level-indicator active${(isLessonTwo || isPosttest) ? ' lesson-locked' : ''}" data-level="1" aria-disabled="${isLessonTwo || isPosttest}">
                     <div>第一關</div>
-                    <small>${isLessonTwo ? '第一節內容' : '初識圓與弧'}</small>
+                    <small>${(isLessonTwo || isPosttest) ? '基礎概念探索' : '初識圓與弧'}</small>
                 </div>
-                <div class="level-indicator${isLessonTwo ? ' lesson-locked' : ''}" data-level="2" aria-disabled="${isLessonTwo}">
+                <div class="level-indicator${(isLessonTwo || isPosttest) ? ' lesson-locked' : ''}" data-level="2" aria-disabled="${isLessonTwo || isPosttest}">
                     <div>第二關</div>
-                    <small>${isLessonTwo ? '第一節內容' : '圓心角探索'}</small>
+                    <small>${(isLessonTwo || isPosttest) ? '基礎概念探索' : '圓心角探索'}</small>
                 </div>
-                <div class="level-indicator${isLessonTwo ? ' lesson-locked' : ''}" data-level="3" aria-disabled="${isLessonTwo}">
+                <div class="level-indicator${(isLessonTwo || isPosttest) ? ' lesson-locked' : ''}" data-level="3" aria-disabled="${isLessonTwo || isPosttest}">
                     <div>第三關</div>
-                    <small>${isLessonTwo ? '第一節內容' : '圓周角探秘'}</small>
+                    <small>${(isLessonTwo || isPosttest) ? '基礎概念探索' : '圓周角探秘'}</small>
                 </div>
-                <div class="level-indicator${isLessonOne ? ' lesson-locked' : ''}" data-level="4" aria-disabled="${isLessonOne}">
+                <div class="level-indicator${(isLessonOne || isPosttest) ? ' lesson-locked' : ''}" data-level="4" aria-disabled="${isLessonOne || isPosttest}">
                     <div>第四關</div>
-                    <small>${isLessonOne ? '第二節開放' : '關係實驗室'}</small>
+                    <small>${(isLessonOne || isPosttest) ? '角度關係挑戰' : '關係實驗室'}</small>
                 </div>
-                <div class="level-indicator${isLessonOne ? ' lesson-locked' : ''}" data-level="5" aria-disabled="${isLessonOne}">
+                <div class="level-indicator${(isLessonOne || isPosttest) ? ' lesson-locked' : ''}" data-level="5" aria-disabled="${isLessonOne || isPosttest}">
                     <div>第五關</div>
-                    <small>${isLessonOne ? '第二節開放' : '終極挑戰'}</small>
+                    <small>${(isLessonOne || isPosttest) ? '角度關係挑戰' : '終極挑戰'}</small>
                 </div>
-                <div class="level-indicator${isStructuredLesson ? ' lesson-locked' : ''}" data-level="6" aria-disabled="${isStructuredLesson}">
+                <div class="level-indicator${(isLessonOne || isLessonTwo) ? ' lesson-locked' : ''}" data-level="6" aria-disabled="${isLessonOne || isLessonTwo}">
                     <div>第六關</div>
-                    <small>${isStructuredLesson ? '第三節開放' : '能力測驗'}</small>
+                    <small>${(isLessonOne || isLessonTwo) ? '完成探索後開放' : '學習後測'}</small>
                 </div>
             `;
 
@@ -2976,7 +3160,7 @@ function enterKingdom() {
                     lessonNotice.id = 'lessonModeNotice';
                     progressBar.insertAdjacentElement('afterend', lessonNotice);
                 }
-                lessonNotice.innerHTML = '<strong>第一節課堂模式</strong>｜本節依序完成第一至第三關；第四關之後將在下一節開放。';
+                lessonNotice.innerHTML = '<strong>基礎概念探索</strong>｜依序完成第一至第三關；第四、第五關請從「角度關係挑戰」入口進入。';
                 lessonNotice.style.cssText = 'background:#fff3cd;border:2px solid #ffc107;border-radius:10px;padding:14px 18px;margin:0 auto 20px;max-width:1100px;color:#664d03;text-align:center;line-height:1.5;';
             } else if (isLessonTwo) {
                 if (!lessonNotice) {
@@ -2984,8 +3168,16 @@ function enterKingdom() {
                     lessonNotice.id = 'lessonModeNotice';
                     progressBar.insertAdjacentElement('afterend', lessonNotice);
                 }
-                lessonNotice.innerHTML = '<strong>第二節課堂模式</strong>｜本節直接從第四關開始，依序完成第四、第五關。';
+                lessonNotice.innerHTML = '<strong>角度關係挑戰</strong>｜直接從第四關開始，依序完成第四、第五關。';
                 lessonNotice.style.cssText = 'background:#e7f5ff;border:2px solid #339af0;border-radius:10px;padding:14px 18px;margin:0 auto 20px;max-width:1100px;color:#1864ab;text-align:center;line-height:1.5;';
+            } else if (isPosttest) {
+                if (!lessonNotice) {
+                    lessonNotice = document.createElement('div');
+                    lessonNotice.id = 'lessonModeNotice';
+                    progressBar.insertAdjacentElement('afterend', lessonNotice);
+                }
+                lessonNotice.innerHTML = '<strong>學習後測</strong>｜直接完成後測B卷，不必重做第一至第五關。';
+                lessonNotice.style.cssText = 'background:#f3f0ff;border:2px solid #845ef7;border-radius:10px;padding:14px 18px;margin:0 auto 20px;max-width:1100px;color:#5f3dc4;text-align:center;line-height:1.5;';
             } else if (lessonNotice) {
                 lessonNotice.remove();
             }
@@ -3000,15 +3192,19 @@ function enterKingdom() {
                     const level = parseInt(el.dataset.level);
                     const isTeacherTest = studentInfo.recordType === 'teacher-test' || studentInfo.sessionMode === 'teacher-free';
                     if (isLessonOne && level > 3) {
-                        alert(level === 6 ? '能力測驗將在第三節開放！' : '第四、第五關將在第二節開放！');
+                        alert(level === 6 ? '後測請從「完成學習後測」入口進入。' : '第四、第五關請從「角度關係挑戰」入口進入。');
                         return;
                     }
                     if (isLessonTwo && (level < 4 || level > 5)) {
-                        alert(level < 4 ? '第一至第三關為第一節內容，本節請從第四關開始。' : '能力測驗將在第三節開放！');
+                        alert(level < 4 ? '第一至第三關請從「基礎概念探索」入口進入。' : '後測請從「完成學習後測」入口進入。');
+                        return;
+                    }
+                    if (isPosttest && level !== 6) {
+                        alert('本入口只進行後測B卷；學習關卡請從對應的探索入口進入。');
                         return;
                     }
                     // 第一關或已完成的關卡可以進入，未完成的關卡需要完成前一關
-                    if (isTeacherTest || level === 1 || (isLessonTwo && level === 4) || levelCompleted[level - 1]) {
+                    if (isTeacherTest || level === 1 || (isLessonTwo && level === 4) || (isPosttest && level === 6) || levelCompleted[level - 1]) {
                         nextLevel(level);
                     } else {
                         alert(`請先完成第${level - 1}關的測驗才能進入第${level}關！`);
@@ -3017,6 +3213,10 @@ function enterKingdom() {
             });
             
             // 嘗試載入之前的進度
+            if (isPosttest) {
+                nextLevel(6);
+                return;
+            }
             const hasProgress = loadProgress();
             if (isLessonTwo) {
                 if (levelCompleted[5]) {
@@ -3275,23 +3475,24 @@ function enterKingdom() {
                     2: "第三關：解開圓周角的謎團",
                     3: "第四關：揭示角度之間的秘密關係",
                     4: "第五關：證明你的智慧",
-                    5: "第六關：能力測驗"
+                    5: "第六關：後測B卷",
+                    6: "完成後測B卷"
                 };
                 
                 if (studentInfo.sessionMode === 'lesson1' && level === 3) {
                     btnGroup.innerHTML = `
                     <div class="success-message fade-in" style="background: #d4edda; border: 2px solid #28a745; border-radius: 10px; padding: 20px; margin: 20px 0; text-align: center;">
-                        <h3 style="color: #155724; margin-bottom: 15px;">🎉 第一節探索完成！</h3>
+                        <h3 style="color: #155724; margin-bottom: 15px;">🎉 基礎概念探索完成！</h3>
                         <p style="color: #155724; font-size: 1.1em; margin-bottom: 8px;">你已完成弧、圓心角與圓周角的基礎探索。</p>
-                        <p style="color: #155724;">請依教師指示填寫課末紀錄；第四、第五關將在第二節開放。</p>
+                        <p style="color: #155724;">請依教師指示填寫課末紀錄；第四、第五關請從「角度關係挑戰」入口進入。</p>
                         ${getLessonExportHtml()}
                     </div>`;
                 } else if (studentInfo.sessionMode === 'lesson2' && level === 5) {
                     btnGroup.innerHTML = `
                     <div class="success-message fade-in" style="background: #d4edda; border: 2px solid #28a745; border-radius: 10px; padding: 20px; margin: 20px 0; text-align: center;">
-                        <h3 style="color: #155724; margin-bottom: 15px;">🎉 第二節探索完成！</h3>
+                        <h3 style="color: #155724; margin-bottom: 15px;">🎉 角度關係挑戰完成！</h3>
                         <p style="color: #155724; font-size: 1.1em; margin-bottom: 8px;">你已完成第四、第五關的關係探索與綜合挑戰。</p>
-                        <p style="color: #155724;">能力測驗與回饋將在第三節開放。</p>
+                        <p style="color: #155724;">後測與回饋請從「完成學習後測」入口進入。</p>
                         ${getLessonExportHtml()}
                     </div>`;
                 } else {
@@ -3333,6 +3534,13 @@ function enterKingdom() {
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#039;');
+        }
+
+        function formatPosttestMath(value) {
+            return escapeQuizText(value).replace(
+                /弧\s*([A-Z])([A-Z])/g,
+                '<span class="arc-notation" role="img" aria-label="弧 $1$2">$1$2</span>'
+            );
         }
 
         function getTargetedQuizHint(question, selectedIndex, level) {
@@ -4875,7 +5083,7 @@ function setupCanvas(levelNum) {
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            const lessonName = studentInfo.sessionMode === 'lesson2' ? '第二節' : '第一節';
+            const lessonName = studentInfo.sessionMode === 'lesson2' ? '角度關係挑戰' : '基礎概念探索';
             link.download = `${snapshot.anonymousId || 'UNKNOWN'}_${lessonName}學習紀錄.${isCsv ? 'csv' : 'json'}`;
             document.body.appendChild(link);
             link.click();
@@ -4892,8 +5100,8 @@ function setupCanvas(levelNum) {
             if (btnGroup) {
                 btnGroup.innerHTML = `
                     <div class="success-message fade-in" style="background:#d4edda;border:2px solid #28a745;border-radius:10px;padding:20px;margin:20px 0;text-align:center;">
-                        <h3 style="color:#155724;margin-bottom:15px;">🎉 第一節探索已完成</h3>
-                        <p style="color:#155724;">請依教師指示填寫課末紀錄；第四、第五關將在第二節開放。</p>
+                        <h3 style="color:#155724;margin-bottom:15px;">🎉 基礎概念探索已完成</h3>
+                        <p style="color:#155724;">請依教師指示填寫課末紀錄；第四、第五關請從「角度關係挑戰」入口進入。</p>
                         ${getLessonExportHtml()}
                     </div>`;
                 updateSyncStatusDisplay();
@@ -4910,8 +5118,8 @@ function setupCanvas(levelNum) {
             if (btnGroup) {
                 btnGroup.innerHTML = `
                     <div class="success-message fade-in" style="background:#d4edda;border:2px solid #28a745;border-radius:10px;padding:20px;margin:20px 0;text-align:center;">
-                        <h3 style="color:#155724;margin-bottom:15px;">🎉 第二節探索已完成</h3>
-                        <p style="color:#155724;">你已完成第四、第五關；能力測驗與回饋將在第三節開放。</p>
+                        <h3 style="color:#155724;margin-bottom:15px;">🎉 角度關係挑戰已完成</h3>
+                        <p style="color:#155724;">你已完成第四、第五關；後測與回饋請從「完成學習後測」入口進入。</p>
                         ${getLessonExportHtml()}
                     </div>`;
                 updateSyncStatusDisplay();
@@ -4922,12 +5130,17 @@ function setupCanvas(levelNum) {
         function nextLevel(levelNum) {
             const isTeacherTest = studentInfo.recordType === 'teacher-test' || studentInfo.sessionMode === 'teacher-free';
             const isLessonTwo = studentInfo.sessionMode === 'lesson2';
+            const isPosttest = studentInfo.sessionMode === 'posttest';
             if (!isTeacherTest && studentInfo.sessionMode === 'lesson1' && levelNum > 3) {
-                alert(levelNum === 6 ? '能力測驗將在第三節開放！' : '第四、第五關將在第二節開放！');
+                alert(levelNum === 6 ? '後測請從「完成學習後測」入口進入。' : '第四、第五關請從「角度關係挑戰」入口進入。');
                 return;
             }
             if (!isTeacherTest && isLessonTwo && (levelNum < 4 || levelNum > 5)) {
-                alert(levelNum < 4 ? '第一至第三關為第一節內容，本節請從第四關開始。' : '能力測驗將在第三節開放！');
+                alert(levelNum < 4 ? '第一至第三關請從「基礎概念探索」入口進入。' : '後測請從「完成學習後測」入口進入。');
+                return;
+            }
+            if (!isTeacherTest && isPosttest && levelNum !== 6) {
+                alert('本入口只進行後測B卷；學習關卡請從對應的探索入口進入。');
                 return;
             }
             // 檢查關卡是否已解鎖（第一關和已完成的關卡可以進入）
@@ -5194,15 +5407,8 @@ function setupCanvas(levelNum) {
             quizStarted = true;
             userAnswers = [];
             finalQuizQuestions = [];
-            
-            // 從每個關卡隨機選擇一題
-            ['level1', 'level2', 'level3', 'level4', 'level5'].forEach((level, index) => {
-                const levelQuestions = quizData[level];
-                const randomIndex = Math.floor(Math.random() * levelQuestions.length);
-                const selectedQuestion = { ...levelQuestions[randomIndex] };
-                selectedQuestion.id = index + 1; // 題目編號 1-5
-                selectedQuestion.level = parseInt(level.replace('level', '')); // 關卡編號
-                finalQuizQuestions.push(selectedQuestion);
+            POSTTEST_B_ITEMS.forEach((item,index)=>{
+                finalQuizQuestions.push({...item,id:index+1});
                 userAnswers.push(null);
             });
             
@@ -5218,12 +5424,12 @@ const container = document.getElementById('quizContainer');
                 questionDiv.className = 'quiz-question';
                 questionDiv.innerHTML = `
                     <h3>第 ${index + 1} 題</h3>
-                    <p style="font-size: 1.1em; margin-bottom: 12px; line-height: 1.6;">${q.question}</p>
+                    <p style="font-size: 1.1em; margin-bottom: 12px; line-height: 1.6;">${formatPosttestMath(q.question)}</p>
                     ${q.figure ? `<div class="quiz-figure" aria-label="題目圖形">${q.figure}</div>` : ``}
                     <div class="quiz-options" id="options-${q.id}">
                         ${q.options.map((opt, i) => `
                             <div class="quiz-option" onclick="selectAnswer(${q.id}, ${i})" id="option-${q.id}-${i}">
-                                ${String.fromCharCode(65 + i)}. ${opt}
+                                ${String.fromCharCode(65 + i)}. ${formatPosttestMath(opt)}
                             </div>
                         `).join('')}
                     </div>
@@ -5238,27 +5444,20 @@ const container = document.getElementById('quizContainer');
             // 顯示提示訊息
             const hintDiv = document.createElement('div');
             hintDiv.style.cssText = 'background: #d1ecf1; border: 2px solid #17a2b8; border-radius: 10px; padding: 15px; margin: 20px 0; color: #0c5460;';
-            hintDiv.innerHTML = '<strong>💡 提示：</strong>每次測驗都會隨機出題，題目不會重複！請認真作答，不要依賴記憶。';
+            hintDiv.innerHTML = '<strong>作答提醒：</strong>本卷共10題。提交前不顯示答案或分數；請先檢查每題所對的弧與角。';
             container.insertBefore(hintDiv, container.firstChild);
         }
 
         
         function updateFinalQuizStatus() {
             const answered = userAnswers.filter(a => a !== null).length;
-            const total = (userAnswers && userAnswers.length) ? userAnswers.length : 5;
+            const total = (userAnswers && userAnswers.length) ? userAnswers.length : 10;
 
             const answeredEl = document.getElementById('finalAnswered');
             if (answeredEl) answeredEl.textContent = `${answered}/${total}`;
 
-            // 即時計算目前已作答的「答對數」（未提交也能自我檢核）
-            let correctSoFar = 0;
-            if (typeof currentQuizQuestions !== 'undefined' && currentQuizQuestions && currentQuizQuestions.length) {
-                currentQuizQuestions.forEach((q, idx) => {
-                    if (userAnswers[idx] !== null && userAnswers[idx] === q.answer) correctSoFar++;
-                });
-            }
             const scoreEl = document.getElementById('finalScore');
-            if (scoreEl) scoreEl.textContent = `${correctSoFar}`;
+            if (scoreEl) scoreEl.textContent = '—';
         }
 
 function selectAnswer(questionId, optionIndex) {
@@ -5282,14 +5481,18 @@ function selectAnswer(questionId, optionIndex) {
 
         }
 
-        function submitQuiz() {
+        async function submitQuiz() {
             // 檢查是否所有題目都已作答
             if (userAnswers.includes(null)) {
                 alert('請完成所有題目後再提交！');
                 return;
             }
             
-            // 計算分數
+            const submitButton=document.querySelector('#quizButtons button');
+            if (submitButton) { submitButton.disabled=true; submitButton.textContent='正在保存後測…'; }
+            const saveResult=await saveFormalPosttest();
+
+            // 提交並保存後才計算分數
             let correctCount = 0;
             const wrongLevels = new Set();
             const explanations = [];
@@ -5321,11 +5524,11 @@ function selectAnswer(questionId, optionIndex) {
                 if (isCorrect) {
                     explanationDiv.style.background = '#d4edda';
                     explanationDiv.style.color = '#155724';
-                    explanationDiv.innerHTML = `<strong>✓ 答對了！</strong> 正確答案是：${q.options[q.answer]}`;
+                    explanationDiv.innerHTML = `<strong>✓ 答對了！</strong> 正確答案是：${formatPosttestMath(q.options[q.answer])}`;
                 } else {
                     explanationDiv.style.background = '#f8d7da';
                     explanationDiv.style.color = '#721c24';
-                    explanationDiv.innerHTML = `<strong>✗ 答錯了</strong><br>正確答案是：<strong>${q.options[q.answer]}</strong><br><br>${q.explanation}`;
+                    explanationDiv.innerHTML = `<strong>✗ 答錯了</strong><br>正確答案是：<strong>${formatPosttestMath(q.options[q.answer])}</strong><br><br>${formatPosttestMath(q.explanation)}`;
                 }
                 
                 questionDiv.appendChild(explanationDiv);
@@ -5342,10 +5545,10 @@ function selectAnswer(questionId, optionIndex) {
             
             const score = correctCount;
             const total = currentQuizQuestions.length;
-            const passed = score >= 4;
+            const passed = score >= 8;
             
             // 顯示結果
-            showQuizResult(score, total, passed, wrongLevels);
+            showQuizResult(score, total, passed, wrongLevels, saveResult);
             
             // 更新按鈕
             document.getElementById('quizButtons').innerHTML = '';
@@ -5359,7 +5562,7 @@ function selectAnswer(questionId, optionIndex) {
             }, 100);
         }
 
-        function showQuizResult(score, total, passed, wrongLevels) {
+        function showQuizResult(score, total, passed, wrongLevels, saveResult) {
             const container = document.getElementById('quizContainer');
             const resultDiv = document.createElement('div');
             resultDiv.className = 'quiz-result';
@@ -5368,7 +5571,8 @@ function selectAnswer(questionId, optionIndex) {
                 resultDiv.innerHTML = `
                     <h3>🎉 恭喜通過測驗！</h3>
                     <div class="score-display">${score} / ${total}</div>
-                    <p style="font-size: 1.2em;">你已經完全掌握圓周角的概念！</p>
+                    <p style="font-size: 1.2em;">你已達到角度守護者認證標準！</p>
+                    <p>${saveResult && saveResult.formal ? (saveResult.synced ? '正式後測已同步教師後台。' : '正式後測已保存於平板，連網後會補傳。') : '本次為補救後重測，不會覆蓋第一次正式後測。'}</p>
                     <p style="font-size: 1.1em; margin-top: 15px;">即將為你頒發「角度守護者」認證證書...</p>
                 `;
                 
@@ -5393,13 +5597,14 @@ function selectAnswer(questionId, optionIndex) {
                 resultDiv.innerHTML = `
                     <h3>💪 再接再厲！</h3>
                     <div class="score-display">${score} / ${total}</div>
-                    <p style="font-size: 1.2em;">需要答對4題以上才能通過測驗</p>
+                    <p style="font-size: 1.2em;">需要答對8題以上才能通過認證</p>
+                    <p>${saveResult && saveResult.formal ? (saveResult.synced ? '正式後測已同步教師後台。' : '正式後測已保存於平板，連網後會補傳。') : '本次為補救後重測，不會覆蓋第一次正式後測。'}</p>
                     
                     <div class="recommendation">
                         <h4>🎯 建議複習以下關卡：</h4>
                         <ul>${recommendations}</ul>
                         <p style="margin-top: 15px; color: #856404; font-size: 0.95em;">
-                        💡 點擊關卡名稱即可回去複習。複習後再次測驗時，<strong>題目會重新隨機抽選</strong>，請確實理解概念而非記住答案。
+                        💡 點擊關卡名稱即可回去複習。補救後可以再測一次，但第一次正式後測成績會完整保留。
                         </p>
                     </div>
                     
@@ -5471,7 +5676,7 @@ function selectAnswer(questionId, optionIndex) {
             hintDiv.style.cssText = 'background: #fff3cd; border: 2px solid #ffc107; border-radius: 10px; padding: 20px; margin: 20px 0; color: #856404; text-align: center;';
             hintDiv.innerHTML = `
                 <h4 style="margin-bottom: 15px;">🔄 準備重新測驗</h4>
-                <p style="font-size: 1.1em; line-height: 1.6;">每次測驗都會從題庫中隨機選擇不同的題目。<br>請認真複習後再開始測驗，不要依賴記憶答案！</p>
+                <p style="font-size: 1.1em; line-height: 1.6;">這次是補救後重測，題目仍為後測B卷。<br>重測不會覆蓋第一次正式後測紀錄。</p>
             `;
             container.appendChild(hintDiv);
             
