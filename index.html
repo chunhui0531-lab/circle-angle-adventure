@@ -975,6 +975,7 @@ body.posttest-only .entry-choice-grid .entry-choice:not(:last-child) { display: 
 <option value="">請選擇班級</option>
 <option value="A">A班（八斗）</option>
 <option value="B">B班（香山）</option>
+<option value="905">905班</option>
 </select>
 </div>
 <div style="margin-bottom: 25px;">
@@ -1574,6 +1575,7 @@ body.posttest-only .entry-choice-grid .entry-choice:not(:last-child) { display: 
 <script>
         // 全域變數
         let currentLevel = 1;
+        const CLASS_SEAT_LIMITS = Object.freeze({ A: 30, B: 30, '905': 24 });
         const levels = {
             1: { points: [], canvas: null, ctx: null },
             2: { points: [], canvas: null, ctx: null },
@@ -1631,7 +1633,7 @@ body.posttest-only .entry-choice-grid .entry-choice:not(:last-child) { display: 
         // ===== Google試算表後台同步 =====
         const LEARNING_BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxqrJM3w3Uuj2vFzdZV2OHG2GLTyi0chXemuKHaen7ptUNUtHidZvo0Zdz_57O09602/exec';
         const LEARNING_BACKEND_KEY = 'CIRCLE_ANGLE_2026_V1';
-        const LEARNING_APP_VERSION = '2026.08.06-posttest-b1';
+        const LEARNING_APP_VERSION = '2026.11.13-class-905';
         const POSTTEST_ONLY_MODE = false;
         let syncInProgress = false;
         let syncTimer = null;
@@ -1887,7 +1889,7 @@ body.posttest-only .entry-choice-grid .entry-choice:not(:last-child) { display: 
         }
 
         function queueLearningEvent(partial) {
-            if (studentInfo.recordType !== 'student' || !/^[AB](0[1-9]|[12][0-9]|30)$/.test(studentInfo.anonymousId || '')) return;
+            if (studentInfo.recordType !== 'student' || !isValidStudentIdentity(studentInfo.anonymousId)) return;
             initializeLearningRecord(false);
             const event = {
                 eventId: partial.eventId || createRecordId('event'),
@@ -2952,12 +2954,27 @@ body.posttest-only .entry-choice-grid .entry-choice:not(:last-child) { display: 
             const classCode = document.getElementById('studentClass').value;
             const numberValue = document.getElementById('studentNumber').value.trim();
             const number = Number(numberValue);
-            if (!classCode || !Number.isInteger(number) || number < 1 || number > 30) return '';
+            const seatLimit = CLASS_SEAT_LIMITS[classCode];
+            if (!seatLimit || !Number.isInteger(number) || number < 1 || number > seatLimit) return '';
             return `${classCode}${String(number).padStart(2, '0')}`;
+        }
+
+        function isValidStudentIdentity(anonymousId) {
+            return Object.entries(CLASS_SEAT_LIMITS).some(([classCode, seatLimit]) => {
+                if (!String(anonymousId || '').startsWith(classCode)) return false;
+                const seatText = String(anonymousId).slice(classCode.length);
+                const seatNumber = Number(seatText);
+                return /^\d{2}$/.test(seatText) && Number.isInteger(seatNumber) && seatNumber >= 1 && seatNumber <= seatLimit;
+            });
         }
 
         function updateAnonymousPreview() {
             const preview = document.getElementById('anonymousIdPreview');
+            const classCode = document.getElementById('studentClass').value;
+            const numberInput = document.getElementById('studentNumber');
+            const seatLimit = CLASS_SEAT_LIMITS[classCode] || 30;
+            numberInput.max = String(seatLimit);
+            numberInput.placeholder = classCode === '905' ? '例：24（限1～24）' : '例：7';
             if (!preview) return;
             preview.textContent = getAnonymousId() || '尚未產生';
         }
@@ -3008,7 +3025,8 @@ body.posttest-only .entry-choice-grid .entry-choice:not(:last-child) { display: 
                 return;
             }
             if (!anonymousId) {
-                alert('請輸入1到30之間的正確座號！');
+                const seatLimit = CLASS_SEAT_LIMITS[className] || 30;
+                alert(`請輸入1到${seatLimit}之間的正確座號！`);
                 return;
             }
             if (!consentAcknowledged) {
